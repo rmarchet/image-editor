@@ -12,9 +12,10 @@
   "keywords": [
     "image", "editor", "fabric", "react", "typescript"],
   "scripts": {
-    "dev": "rollup -c -w",
-    "build": "rollup -c",
-    "clean": "rm -rf dist/*",
+    "dev": "NODE_ENV=development rollup -c -w",
+    "build": "NODE_ENV=production rollup -c",
+    "prebuild": "rm -rf dist",
+    "clean": "rm -rf dist",
     "start": "npm run clean && npm run dev",
     "type-check": "tsc --noEmit"
   },

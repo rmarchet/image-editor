@@ -8,14 +8,18 @@ import postcss from 'rollup-plugin-postcss';
 import json from '@rollup/plugin-json';
 import copy from 'rollup-plugin-copy';
 
-const isDev = process.env.NODE_ENV !== 'production';
+// Detect if we're in development mode (watch mode or NODE_ENV=development)
+// Check for watch mode via command line args or NODE_ENV
+const isWatchMode = process.argv.includes('-w') || process.argv.includes('--watch');
+const isDev = process.env.NODE_ENV === 'development' || 
+              (process.env.NODE_ENV !== 'production' && isWatchMode);
 
 export default {
   input: 'src/index.tsx',
   output: {
     file: 'dist/bundle.js',
     format: 'iife',
-    sourcemap: true,
+    sourcemap: isDev, // Only generate sourcemaps in dev mode
     globals: {
       'canvas': 'canvas',
       'react': 'React',
