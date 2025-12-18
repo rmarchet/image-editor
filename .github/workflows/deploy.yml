@@ -27,6 +27,6 @@ jobs:
         with:
           folder: dist
           target-folder: image-editor
-          branch: master
+          branch: main
           repository-name: rmarchet/rmarchet.github.io
           token: ${{ secrets.PUSH_GITHUB_TOKEN }}
