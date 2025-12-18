@@ -1,0 +1,70 @@
+.footer-container {
+  border-top: 1px solid #eee;
+  padding: 1rem;
+  background-color: white;
+}
+
+.tool-options {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.option-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.option-label {
+  font-size: 0.9rem;
+  color: #666;
+  min-width: 80px;
+}
+
+.effect-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.effect-button:hover {
+  background-color: #f8f9fa;
+  border-color: #ccc;
+}
+
+.effect-button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #0056b3;
+}
+
+.apply-button {
+  padding: 0.5rem 1.5rem;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.apply-button:hover {
+  background-color: #218838;
+}
+
+.reset-button {
+  padding: 0.5rem 1.5rem;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.reset-button:hover {
+  background-color: #5a6268;
+} 

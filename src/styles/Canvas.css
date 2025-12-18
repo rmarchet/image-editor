@@ -1,0 +1,59 @@
+.canvas-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #e9ecef;
+  padding: 2rem;
+  position: relative;
+}
+
+.canvas-wrapper {
+  position: relative;
+  background-color: #fff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.canvas-wrapper canvas {
+  display: block;
+  border-radius: 8px;
+}
+
+.canvas-wrapper .canvas-container:focus {
+  outline: none;
+}
+
+.canvas-wrapper .canvas-container .corner {
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.canvas-wrapper .canvas-container .corner:hover {
+  transform: scale(1.2);
+}
+
+.upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+} 
