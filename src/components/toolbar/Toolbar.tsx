@@ -374,7 +374,8 @@ export const Toolbar = () => {
       {/* Save */}
       <Flex gap={1}>
         <ToolButton icon={<BiSave size={16} />} label="Save Project" onClick={handleSaveProject} />
-        <ToolButton icon={<BiSave size={16} />} label="Save" onClick={handleSave} accent />
+        <Divider />
+        <ToolButton icon={<BiSave size={16} />} label="Save PNG" onClick={handleSave} accent />
       </Flex>
     </Flex>
   );

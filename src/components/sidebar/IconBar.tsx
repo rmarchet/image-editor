@@ -40,11 +40,29 @@ export const IconBar = () => {
       bg="#1e1e2e"
       borderRight="1px solid"
       borderColor="#313244"
-      py={2}
+      py={0}
       gap={1}
       alignItems="center"
       overflowY="auto"
+      className='icon-bar'
     >
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        w="100%"
+        h="48px"
+        bg="#7c3aed"
+        className='logo'
+      >
+        <img
+          src="/favicon.svg"
+          alt="ImageEditor"
+          width={26}
+          height={26}
+        />
+      </Box>
       {panels.map((panel) => (
         <Box
           key={panel.id}

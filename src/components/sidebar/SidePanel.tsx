@@ -47,8 +47,15 @@ export const SidePanel = ({ panel }: SidePanelProps) => {
       display="flex"
       flexDirection="column"
       overflow="hidden"
+      className='sidebar-panel'
     >
-      <Box px={4} py={3} borderBottom="1px solid" borderColor="#313244">
+      <Box
+        px={4}
+        py="14px"
+        borderBottom="1px solid"
+        borderColor="#313244"
+        className='sidebar-panel-header'
+      >
         <Heading size="sm" color="#cdd6f4" fontWeight="600">
           {panelTitles[panel]}
         </Heading>
