@@ -2,7 +2,7 @@
 
 ## Goal
 
-Add command-based undo/redo history, a WebGL filter pipeline, layer management, and canvas export. This phase elevates the editor from a basic drawing tool to a professional editing experience.
+Add command-based undo/redo history, filter pipeline integration, robust layer operations, and export flow.
 
 ## Command-Based History
 
@@ -38,8 +38,9 @@ Concrete command implementations:
 | `RotateCommand` | element ID, from/to angle | Restores original rotation |
 | `TransformCommand` | element ID, full before/after snapshot (x, y, w, h, rotation) | Restores all transform properties at once |
 | `AddElementCommand` | element reference | Removes element on undo |
-| `RemoveElementCommand` | element reference + index | Re-adds element on undo |
+| `RemoveElementCommand` | element reference | Re-adds element on undo |
 | `ReorderCommand` | element ID, from/to index | Swaps back to original index |
+| `UpdateTextConfigCommand` | text config before/after | Restores typography state |
 
 All commands call `EditorEngine.getInstance()` internally to apply changes, followed by `syncElementsToStore()` to update the UI.
 
@@ -65,28 +66,17 @@ class HistoryManager {
 - `undo()` — pops from undo, calls `command.undo()`, pushes to redo
 - `redo()` — pops from redo, calls `command.redo()`, pushes to undo
 
-## WebGL Filters
+## Filters
 
 ### Filter Pipeline
 
-Filters are applied per-element via PixiJS's built-in `container.filters` array. They are non-destructive — the original image/shape data is preserved, and filters can be added, removed, or replaced at any time.
+Filters are applied per-element via Pixi `container.filters`. They are non-destructive and can be changed or cleared at any time.
 
 ### `engine/filters/FilterManager.ts`
 
-Provides a registry of 10 filter presets:
+`FilterManager` provides filter factories/presets for engine-level reuse.
 
-| Preset ID | Display Name | PixiJS Implementation |
-|-----------|-------------|----------------------|
-| `grayscale` | Grayscale | `ColorMatrixFilter.grayscale(0.5)` |
-| `sepia` | Sepia | `ColorMatrixFilter.sepia()` |
-| `brightness` | Brighten | `ColorMatrixFilter.brightness(1.4)` |
-| `contrast` | Contrast | `ColorMatrixFilter.contrast(0.4)` |
-| `saturate` | Saturate | `ColorMatrixFilter.saturate(1.5)` |
-| `desaturate` | Desaturate | `ColorMatrixFilter.desaturate()` |
-| `invert` | Invert | `ColorMatrixFilter.negative()` |
-| `blur` | Blur | `BlurFilter({ strength: 4 })` |
-| `noise` | Noise | `NoiseFilter({ noise: 0.3 })` |
-| `hueRotate` | Hue Shift | `ColorMatrixFilter.hue(90)` |
+Typical presets include grayscale, sepia, brightness, contrast, saturate, desaturate, invert, blur, hue shift, and noise.
 
 **API:**
 - `applyPreset(filterId)` — applies the preset filter to all selected elements
@@ -96,7 +86,7 @@ Filters are applied by reading `selectedIds` from `elementStore`, looking up eac
 
 ### UI Integration
 
-The `FiltersPanel` in the sidebar presents filters as a 2-column grid. Clicking a preset calls `applyFilter()` which creates the appropriate PixiJS filter and applies it. The "None" option clears all filters.
+`FiltersPanel` presents preset actions and a clear option. Applying a preset updates both `container.filters` and element metadata (`appliedFilterId`) so state can be serialized.
 
 The panel shows "Select an element to apply filters" when nothing is selected.
 
@@ -110,12 +100,14 @@ The panel shows "Select an element to apply filters" when nothing is selected.
 
 ### UI side (`LayersPanel`)
 
-- Displays elements in reverse order (top-most first) to match visual stacking
-- Each row shows: type badge, name, visibility toggle, lock toggle, delete button
+- Displays elements in reverse order (top-most first)
+- Each row supports move up/down, visibility, lock, delete
 - Clicking a row selects the element
 - Visibility toggle sets `element.visible` directly on the engine element
 - Lock toggle sets `element.locked` — locked elements can't be selected or moved
 - Delete removes the element from the engine
+
+Reorder operations are undoable via `ReorderCommand`.
 
 ## Export (`utils/export.ts`)
 
@@ -130,4 +122,4 @@ The panel shows "Select an element to apply filters" when nothing is selected.
 
 **API:** `exportCanvas(format: 'png' | 'jpeg' = 'png', quality = 1)`
 
-This ensures the exported image matches the canvas dimensions exactly, not the viewport size.
+This ensures exported output matches artboard dimensions rather than current viewport zoom/pan.

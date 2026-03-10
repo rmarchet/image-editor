@@ -2,7 +2,7 @@
 
 ## Goal
 
-Implement a unified tool system where each tool controls how pointer events on the canvas are interpreted. Only one tool is active at a time. Tools are managed by a `ToolManager` that listens to the Zustand `toolStore` and delegates events accordingly.
+Implement a unified tool system where each tool owns pointer semantics on the canvas. Only one tool is active at a time and `ToolManager` delegates events based on `toolStore.activeTool`.
 
 ## Architecture
 
@@ -53,11 +53,11 @@ interface BaseTool {
 Orchestrates tool lifecycle.
 
 **Construction:**
-- Instantiates all 5 tools (`select`, `crop`, `draw`, `text`, `shape`) and registers them in a `Map<ToolType, BaseTool>`
+- Instantiates tools (`select`, `crop`, `draw`, `text`, `shape`) and registers them in a `Map<ToolType, BaseTool>`
 - Subscribes to `useToolStore` — when `activeTool` changes, calls `switchTool()`
 - Fires immediately with the initial tool state
 - Registers a global `keydown` listener that delegates to the active tool
-- Attaches `pointerdown`, `pointermove`, `pointerup` listeners on the canvas element
+- Attaches pointer listeners to the canvas element
 
 **Event delegation:**
 - Converts screen coords to world coords
@@ -103,9 +103,10 @@ Overlays a draggable crop region on a selected `ImageElement`.
 - All dimensions clamped to minimum 20px
 
 **Apply/Cancel:**
-- `applyCrop()` — renders the cropped region to a `RenderTexture`, replaces the element's texture, repositions
-- `cancelCrop()` — switches back to Select tool
-- Both called from the Toolbar UI
+- `applyCrop()` — renders cropped region to `RenderTexture` and replaces element texture
+- `cancelCrop()` — exits crop mode back to Select
+
+Note: apply/cancel methods are implemented at tool level; UI wiring can be added/extended without changing engine API.
 
 **Deactivation:** Removes the overlay `Graphics`, resets `isCropping`.
 
@@ -118,14 +119,11 @@ Freehand drawing using PixiJS `Graphics`.
 **Pointer events:**
 - `pointerdown` — creates a new `Graphics` instance, draws an initial dot at the start point, reads brush config from `toolStore.drawConfig`
 - `pointermove` — `lineTo()` from last point to current point, strokes with configured color/size
-- `pointerup` — wraps the `Graphics` in a custom `DrawingElement` (extends `BaseElement`) and adds it to the engine
+- `pointerup` — commits a stroke-based `DrawingElement` and adds it to engine
 
 **Brush config:** `brushSize` (1–50), `brushColor` (hex), `brushOpacity` (0.1–1.0) — all from `toolStore.drawConfig`.
 
-The `DrawingElement` inner class:
-- Extends `BaseElement` with type `'drawing'`
-- Wraps the completed `Graphics` as its display child
-- `width`/`height` are derived from the graphics bounds
+Stroke data is persisted (`points`, `color`, `size`, `opacity`) so drawings can be serialized/deserialized.
 
 ### `engine/tools/TextTool.ts`
 
@@ -136,7 +134,7 @@ Click-to-place text element.
 **Pointer events:**
 - `pointerdown` — creates a `TextElement` with default text "Edit me" at the clicked world position, adds to engine, selects it, switches to Select tool
 
-This is intentionally minimal — text editing happens via the toolbar property inputs.
+This is intentionally minimal for placement; editing is handled by inline text session flow (`CanvasHost` + `textEditStore`) and toolbar style controls.
 
 ### `engine/tools/ShapeTool.ts`
 

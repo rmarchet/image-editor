@@ -2,26 +2,28 @@
 
 ## Goal
 
-Add the finishing touches that make the editor feel like a real application: project persistence via IndexedDB, comprehensive keyboard shortcuts, responsive canvas sizing, and deployment updates.
+Add production-grade persistence, keyboard ergonomics, responsive behavior, and deployment polish.
 
-## IndexedDB Persistence (`utils/persistence.ts`)
+## Persistence
+
+### IndexedDB (`src/utils/persistence.ts`)
 
 ### Why IndexedDB instead of localStorage
 
-The old Fabric.js editor stored the entire image as a base64 data URL in `localStorage` under the key `imageEditor_lastImage`. This has two problems:
+Legacy localStorage image persistence had two main issues:
 - **Size limit:** localStorage is capped at ~5–10 MB depending on the browser
 - **Performance:** serializing/deserializing large base64 strings blocks the main thread
 
-IndexedDB (via the `idb-keyval` library) supports binary `Blob` storage and has a much higher size limit (typically hundreds of MB).
+IndexedDB (`idb-keyval`) is used for larger and non-blocking storage.
 
 ### API
 
 ```ts
-saveProject()            // saves canvas state + element snapshots to IndexedDB
-loadProject()            // returns SavedProject or null
-deleteProject()          // removes project + all associated image blobs
-saveImageBlob(id, blob)  // stores an image blob with element ID prefix
-loadImageBlob(id)        // retrieves a stored image blob
+saveProject()
+loadProject()
+deleteProject()
+saveImageBlob(id, blob)
+loadImageBlob(id)
 ```
 
 ### Data Model
@@ -36,13 +38,20 @@ interface SavedProject {
 }
 ```
 
-Image blobs are stored separately under keys prefixed with `imageEditor_img_` to keep the project metadata lightweight.
+### File-based project persistence (`src/utils/projectFile.ts`)
+
+In the first iteration, persistence also includes portable `.ieproj` files:
+
+- `saveProjectToFile()`
+- `loadProjectFromFile(file)`
+
+This path preserves element-level details (including filter metadata, scale, drawing strokes, and text style configuration).
 
 ## Keyboard Shortcuts (`utils/shortcuts.ts`)
 
 ### Implementation
 
-A single `keydown` listener registered on `window` at app mount. Returns a cleanup function for the React effect.
+A global `keydown` listener is registered once and cleaned up on unmount.
 
 **Input guard:** Events are ignored when the target is `<input>`, `<textarea>`, or `contentEditable` — prevents shortcuts from firing during text editing.
 
@@ -55,7 +64,7 @@ A single `keydown` listener registered on `window` at app mount. Returns a clean
 | `Ctrl/Cmd + Z` | Undo |
 | `Ctrl/Cmd + Shift + Z` | Redo |
 | `Ctrl/Cmd + Y` | Redo (alternative) |
-| `Ctrl/Cmd + S` | Export/Save (prevents browser save dialog) |
+| `Ctrl/Cmd + S` | Export image (prevents browser save dialog) |
 | `Ctrl/Cmd + A` | Select all elements |
 | `Delete` / `Backspace` | Delete selected elements |
 | `Escape` | Switch to Select tool + deselect all |
@@ -66,7 +75,7 @@ A single `keydown` listener registered on `window` at app mount. Returns a clean
 
 ### Arrow Key Nudging
 
-Handled separately from the shortcut map via `handleArrowNudge()`:
+Handled separately via `handleArrowNudge()`:
 
 - `Arrow Up/Down/Left/Right` — moves all selected elements by 1px
 - With `Shift` held — moves by 10px
@@ -83,7 +92,7 @@ A `ResizeObserver` is attached to the canvas host `<div>` on mount. When the con
 2. Calls `engine.resize(width, height)` which delegates to `app.renderer.resize()`
 3. The PixiJS renderer adjusts its canvas element dimensions
 
-The viewport transform (zoom/pan) is preserved across resizes. The user can call `fitToScreen()` via the bottom bar button to re-center.
+Viewport transform is recalculated with fit logic after resizes to keep artboard framed.
 
 ### CSS Layout
 
@@ -91,21 +100,21 @@ The viewport transform (zoom/pan) is preserved across resizes. The user can call
 - The PixiJS `<canvas>` element is appended as a child and fills the container
 - The renderer is initialized with `autoDensity: true` for HiDPI display support
 
-## CI/CD Updates
+## CI/CD and Deployment
 
 ### `.github/workflows/deploy.yml`
 
-Updated from the old Rollup build:
+Deployment workflow uses modern GitHub Actions:
 - Upgraded `actions/checkout` to v4, `actions/setup-node` to v4
 - Added `yarn type-check` step before build
 - Build command is now `yarn build` (which runs `tsc -b && vite build`)
-- Deploy artifact is still `dist/` → GitHub Pages
+- Deploy step publishes `dist/` to GitHub Pages target repository
 
 ## Performance Considerations
 
 ### Render loop
 
-The PixiJS ticker runs continuously but the only per-frame work is `selection.drawOverlay(zoom)` — redrawing the selection bounding box and handles. The actual scene only re-renders when PixiJS detects changes to the scene graph.
+The ticker performs minimal per-frame overlay redraw work; heavy serialization is deferred to action boundaries.
 
 ### Zustand subscriptions
 
