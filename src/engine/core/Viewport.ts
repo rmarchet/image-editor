@@ -42,22 +42,24 @@ export class Viewport {
 
   private onWheel = (e: WheelEvent) => {
     e.preventDefault();
-    const rect = (this.app.canvas as HTMLCanvasElement).getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
 
-    const factor = e.deltaY < 0 ? 1.1 : 0.9;
-    const newZoom = Math.max(0.05, Math.min(20, this._zoom * factor));
+    if (e.altKey) {
+      const factor = e.deltaY < 0 ? 1.1 : 0.9;
+      this.setZoomAtCenter(this._zoom * factor);
+      return;
+    }
 
-    const worldX = (mouseX - this._panX) / this._zoom;
-    const worldY = (mouseY - this._panY) / this._zoom;
+    const PAN_SPEED = 1;
 
-    this._panX = mouseX - worldX * newZoom;
-    this._panY = mouseY - worldY * newZoom;
-    this._zoom = newZoom;
+    if (e.shiftKey) {
+      const horizontalDelta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
+      this._panX -= horizontalDelta * PAN_SPEED;
+      this.applyTransform();
+      return;
+    }
 
+    this._panY -= e.deltaY * PAN_SPEED;
     this.applyTransform();
-    useEditorStore.getState().setZoom(newZoom);
   };
 
   private onKeyDown = (e: KeyboardEvent) => {
@@ -118,6 +120,23 @@ export class Viewport {
   private applyTransform() {
     this.container.scale.set(this._zoom);
     this.container.position.set(this._panX, this._panY);
+  }
+
+  getCenterPoint() {
+    const renderer = this.app?.renderer;
+    if (!renderer) {
+      return { x: 0, y: 0 };
+    }
+
+    return {
+      x: renderer.width / 2,
+      y: renderer.height / 2,
+    };
+  }
+
+  setZoomAtCenter(zoom: number) {
+    const center = this.getCenterPoint();
+    this.setZoom(zoom, center.x, center.y);
   }
 
   setZoom(zoom: number, pivotX?: number, pivotY?: number) {

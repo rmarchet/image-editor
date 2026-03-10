@@ -38,6 +38,7 @@ Implementation notes are documented in `specs/`:
 - `specs/phase-6-polish.md`
 - `specs/phase-7-project-files-and-assets.md`
 - `specs/phase-8-editing-extensions.md`
+- `specs/phase-9-zoom-controls-and-centered-viewport.md`
 
 ## Getting Started
 

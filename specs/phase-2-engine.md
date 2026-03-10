@@ -37,7 +37,10 @@ Utility APIs:
 
 ## Viewport (`src/engine/core/Viewport.ts`)
 
-- wheel zoom with cursor pivot
+- wheel interactions:
+	- wheel: vertical pan
+	- `Shift + wheel`: horizontal pan
+	- `Alt + wheel`: centered zoom
 - pan via `Space + drag` or middle mouse
 - coordinate transforms:
 	- `screenToWorld`

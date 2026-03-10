@@ -208,6 +208,7 @@ export const CanvasHost = () => {
       position="relative"
       overflow="hidden"
       cursor="default"
+      className='canvas-host'
     >
       {activeElementId && overlayStyle && (
         <textarea

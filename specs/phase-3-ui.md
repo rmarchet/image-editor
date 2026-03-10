@@ -129,9 +129,9 @@ Toolbar actions use reusable tooltip wrapper (`src/components/Tooltip.tsx`).
 ## Bottom Bar (`src/components/common/BottomBar.tsx`)
 
 - zoom out/in buttons
-- range slider (`5%` to `500%`)
-- zoom percentage label
-- fit-to-screen action
+- zoom percentage menu trigger
+- preset zoom options (`10%` to `500%`)
+- `Reset` action mapped to fit-to-screen
 
 ## Responsive Behavior
 

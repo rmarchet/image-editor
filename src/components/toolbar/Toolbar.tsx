@@ -180,6 +180,7 @@ export const Toolbar = () => {
           <span>
             <ToolButton
               icon={<BiUndo size={16} />}
+              label="Undo"
               onClick={undo}
               disabled={!canUndo}
             />
@@ -189,6 +190,7 @@ export const Toolbar = () => {
           <span>
             <ToolButton
               icon={<BiRedo size={16} />}
+              label="Redo"
               onClick={redo}
               disabled={!canRedo}
             />
@@ -526,7 +528,7 @@ const TinyToggleButton = ({
   onClick,
   style,
 }: {
-  label: string;
+  label: React.ReactNode;
   active?: boolean;
   onClick?: () => void;
   style?: React.CSSProperties;

@@ -48,7 +48,7 @@ src/
 │   ├── toolbar/
 │   │   └── Toolbar.tsx               # Context-sensitive top toolbar
 │   └── common/
-│       └── BottomBar.tsx             # Zoom slider + fit-to-screen
+│       └── BottomBar.tsx             # Zoom controls (- / % menu / + with reset)
 ├── engine/                           # Framework-agnostic PixiJS engine
 │   ├── core/
 │   │   ├── EditorEngine.ts           # Singleton: PixiJS Application, scene graph, element management
@@ -152,7 +152,7 @@ app.stage
 | Background | BackgroundPanel with color presets + custom picker + canvas size |
 | Filters | FiltersPanel with WebGL presets (grayscale, sepia, blur, etc.) |
 | Undo/Redo | Command-based history (historyStore + Command interface) |
-| Zoom/Pan | Scroll wheel zoom, space+drag pan, zoom slider |
+| Zoom/Pan | Wheel vertical pan, `Shift + wheel` horizontal pan, `Alt + wheel` centered zoom, space+drag pan, bottom bar `- / % menu / +` with reset |
 | Export | PNG download via `renderer.extract` |
 | Persistence | IndexedDB via idb-keyval |
 | Keyboard shortcuts | Ctrl+Z/Y, Delete, arrow nudge, V/C/B/T tool shortcuts |
@@ -173,7 +173,9 @@ app.stage
 | `Escape` | Deselect / switch to Select tool |
 | `Arrow keys` | Nudge selection 1px (10px with Shift) |
 | `Space + drag` | Pan viewport |
-| `Scroll wheel` | Zoom viewport |
+| `Scroll wheel` | Pan viewport vertically |
+| `Shift + Scroll wheel` | Pan viewport horizontally |
+| `Alt + Scroll wheel` | Zoom viewport (centered) |
 
 ## Build & Dev
 

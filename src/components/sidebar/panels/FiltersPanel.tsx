@@ -7,6 +7,7 @@ import { ColorMatrixFilter, BlurFilter } from 'pixi.js';
 interface FilterPreset {
   id: string;
   name: string;
+  icon?: React.ReactNode;
   apply: () => void;
 }
 
