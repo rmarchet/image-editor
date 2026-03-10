@@ -41,6 +41,7 @@ export interface ElementSnapshot {
   name: string;
   locked: boolean;
   visible: boolean;
+  appliedFilterId: string | null;
 }
 
 export interface UploadedAsset {

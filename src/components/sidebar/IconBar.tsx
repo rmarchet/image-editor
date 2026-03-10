@@ -19,14 +19,14 @@ interface PanelItem {
 }
 
 const panels: PanelItem[] = [
-  { id: 'upload', icon: <BiUpload size={20} />, label: 'Upload' },
-  { id: 'text', icon: <BiText size={20} />, label: 'Text' },
-  { id: 'shapes', icon: <BiShapeSquare size={20} />, label: 'Shapes' },
-  { id: 'draw', icon: <BiPaint size={20} />, label: 'Draw' },
-  { id: 'layers', icon: <BiLayer size={20} />, label: 'Layers' },
-  { id: 'background', icon: <BiPalette size={20} />, label: 'Background' },
-  { id: 'filters', icon: <BiAdjust size={20} />, label: 'Filters' },
-  { id: 'settings', icon: <BiCog size={20} />, label: 'Settings' },
+  { id: 'upload', icon: <BiUpload size={22} />, label: 'Upload' },
+  { id: 'text', icon: <BiText size={22} />, label: 'Text' },
+  { id: 'shapes', icon: <BiShapeSquare size={22} />, label: 'Shapes' },
+  { id: 'draw', icon: <BiPaint size={22} />, label: 'Draw' },
+  { id: 'layers', icon: <BiLayer size={22} />, label: 'Layers' },
+  { id: 'background', icon: <BiPalette size={22} />, label: 'Background' },
+  { id: 'filters', icon: <BiAdjust size={22} />, label: 'Filters' },
+  { id: 'settings', icon: <BiCog size={22} />, label: 'Settings' },
 ];
 
 export const IconBar = () => {
@@ -36,12 +36,12 @@ export const IconBar = () => {
   return (
     <Flex
       direction="column"
-      w="56px"
+      w="66px"
       bg="#1e1e2e"
       borderRight="1px solid"
       borderColor="#313244"
       py={0}
-      gap={1}
+      gap={0}
       alignItems="center"
       overflowY="auto"
       className='icon-bar'
@@ -59,8 +59,8 @@ export const IconBar = () => {
         <img
           src="/favicon.svg"
           alt="ImageEditor"
-          width={26}
-          height={26}
+          width={32}
+          height={32}
         />
       </Box>
       {panels.map((panel) => (
@@ -71,18 +71,18 @@ export const IconBar = () => {
           flexDirection="column"
           alignItems="center"
           justifyContent="center"
-          w="48px"
-          h="48px"
-          borderRadius="8px"
-          bg={activePanel === panel.id ? '#3a3a5e' : 'transparent'}
+          w="100%"
+          h="54px"
+          bg={activePanel === panel.id ? '#7c3aed55' : 'transparent'}
           color={activePanel === panel.id ? '#cdd6f4' : '#6c7086'}
           cursor="pointer"
           transition="all 0.15s"
-          _hover={{ bg: '#2a2a3e', color: '#cdd6f4' }}
+          _hover={{ bg: '#7c3aed55', color: '#cdd6f4' }}
           onClick={() => setActivePanel(panel.id)}
+          className='icon-button'
         >
           {panel.icon}
-          <Text fontSize="9px" mt="2px" lineHeight="1">
+          <Text fontSize="12px" mt="2px" lineHeight="1" letterSpacing="-0.75px">
             {panel.label}
           </Text>
         </Box>

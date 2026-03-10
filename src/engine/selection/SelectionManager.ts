@@ -7,6 +7,15 @@ const HANDLE_COLOR = 0x7c3aed;
 const BORDER_COLOR = 0x7c3aed;
 const ROTATION_HANDLE_OFFSET = 25;
 
+type CornerName = 'nw' | 'ne' | 'se' | 'sw';
+
+interface OrientedFrame {
+  corners: Record<CornerName, { x: number; y: number }>;
+  topMid: { x: number; y: number };
+  center: { x: number; y: number };
+  rotationHandle: { x: number; y: number };
+}
+
 export class SelectionManager {
   private overlay: Graphics;
   private selectedElements: BaseElement[] = [];
@@ -99,15 +108,16 @@ export class SelectionManager {
   ): string | null {
     if (this.selectedElements.length !== 1) return null;
     const el = this.selectedElements[0];
-    const bounds = el.container.getBounds(false);
+    const frame = this.getOrientedFrame(el, zoom);
+    if (!frame) return null;
 
     const handleSize = HANDLE_SIZE / zoom;
     const corners = [
-      { name: 'nw', x: bounds.x, y: bounds.y },
-      { name: 'ne', x: bounds.x + bounds.width, y: bounds.y },
-      { name: 'se', x: bounds.x + bounds.width, y: bounds.y + bounds.height },
-      { name: 'sw', x: bounds.x, y: bounds.y + bounds.height },
-    ];
+      { name: 'nw', ...frame.corners.nw },
+      { name: 'ne', ...frame.corners.ne },
+      { name: 'se', ...frame.corners.se },
+      { name: 'sw', ...frame.corners.sw },
+    ] as const;
 
     for (const corner of corners) {
       if (
@@ -118,11 +128,9 @@ export class SelectionManager {
       }
     }
 
-    const rotHandleX = bounds.x + bounds.width / 2;
-    const rotHandleY = bounds.y - ROTATION_HANDLE_OFFSET / zoom;
     if (
-      Math.abs(screenX - rotHandleX) <= handleSize &&
-      Math.abs(screenY - rotHandleY) <= handleSize
+      Math.abs(screenX - frame.rotationHandle.x) <= handleSize &&
+      Math.abs(screenY - frame.rotationHandle.y) <= handleSize
     ) {
       return 'rotate';
     }
@@ -144,18 +152,24 @@ export class SelectionManager {
     for (const el of this.selectedElements) {
       if (!this.allElements.includes(el)) continue;
       try {
-        const bounds = el.container.getBounds(false);
+        const frame = this.getOrientedFrame(el, zoom);
+        if (!frame) continue;
+
         const lineWidth = 1.5 / zoom;
         const handleSize = HANDLE_SIZE / zoom;
 
-        this.overlay.rect(bounds.x, bounds.y, bounds.width, bounds.height);
+        this.overlay.moveTo(frame.corners.nw.x, frame.corners.nw.y);
+        this.overlay.lineTo(frame.corners.ne.x, frame.corners.ne.y);
+        this.overlay.lineTo(frame.corners.se.x, frame.corners.se.y);
+        this.overlay.lineTo(frame.corners.sw.x, frame.corners.sw.y);
+        this.overlay.lineTo(frame.corners.nw.x, frame.corners.nw.y);
         this.overlay.stroke({ width: lineWidth, color: BORDER_COLOR });
 
         const corners = [
-          { x: bounds.x, y: bounds.y },
-          { x: bounds.x + bounds.width, y: bounds.y },
-          { x: bounds.x + bounds.width, y: bounds.y + bounds.height },
-          { x: bounds.x, y: bounds.y + bounds.height },
+          frame.corners.nw,
+          frame.corners.ne,
+          frame.corners.se,
+          frame.corners.sw,
         ];
 
         for (const c of corners) {
@@ -170,15 +184,11 @@ export class SelectionManager {
         }
 
         if (this.selectedElements.length === 1) {
-          const cx = bounds.x + bounds.width / 2;
-          const topY = bounds.y;
-          const rotY = topY - ROTATION_HANDLE_OFFSET / zoom;
-
-          this.overlay.moveTo(cx, topY);
-          this.overlay.lineTo(cx, rotY);
+          this.overlay.moveTo(frame.topMid.x, frame.topMid.y);
+          this.overlay.lineTo(frame.rotationHandle.x, frame.rotationHandle.y);
           this.overlay.stroke({ width: lineWidth, color: BORDER_COLOR });
 
-          this.overlay.circle(cx, rotY, handleSize / 2);
+          this.overlay.circle(frame.rotationHandle.x, frame.rotationHandle.y, handleSize / 2);
           this.overlay.fill(0xffffff);
           this.overlay.stroke({ width: lineWidth, color: HANDLE_COLOR });
         }
@@ -196,5 +206,60 @@ export class SelectionManager {
 
   destroy() {
     this.overlay.destroy();
+  }
+
+  private getOrientedFrame(el: BaseElement, zoom: number): OrientedFrame | null {
+    const localBounds = el.container.getLocalBounds();
+    if (localBounds.width <= 0 || localBounds.height <= 0) return null;
+
+    const nw = el.container.toGlobal({ x: localBounds.x, y: localBounds.y });
+    const ne = el.container.toGlobal({
+      x: localBounds.x + localBounds.width,
+      y: localBounds.y,
+    });
+    const se = el.container.toGlobal({
+      x: localBounds.x + localBounds.width,
+      y: localBounds.y + localBounds.height,
+    });
+    const sw = el.container.toGlobal({
+      x: localBounds.x,
+      y: localBounds.y + localBounds.height,
+    });
+
+    const topMid = {
+      x: (nw.x + ne.x) / 2,
+      y: (nw.y + ne.y) / 2,
+    };
+
+    const center = {
+      x: (nw.x + se.x) / 2,
+      y: (nw.y + se.y) / 2,
+    };
+
+    const edgeX = ne.x - nw.x;
+    const edgeY = ne.y - nw.y;
+    const edgeLength = Math.hypot(edgeX, edgeY) || 1;
+
+    let normalX = -edgeY / edgeLength;
+    let normalY = edgeX / edgeLength;
+
+    const toCenterX = center.x - topMid.x;
+    const toCenterY = center.y - topMid.y;
+    if (normalX * toCenterX + normalY * toCenterY > 0) {
+      normalX *= -1;
+      normalY *= -1;
+    }
+
+    const rotationHandle = {
+      x: topMid.x + normalX * (ROTATION_HANDLE_OFFSET / zoom),
+      y: topMid.y + normalY * (ROTATION_HANDLE_OFFSET / zoom),
+    };
+
+    return {
+      corners: { nw, ne, se, sw },
+      topMid,
+      center,
+      rotationHandle,
+    };
   }
 }

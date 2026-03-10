@@ -2,6 +2,15 @@ import type { Command } from './Command';
 import { EditorEngine } from '../core/EditorEngine';
 import type { BaseElement } from '../elements/BaseElement';
 import { TextElement, type TextConfig } from '../elements/TextElement';
+import { DrawingElement } from '../elements/DrawingElement';
+import type { DrawingStrokeData } from '../../types';
+
+function cloneStrokes(strokes: DrawingStrokeData[]): DrawingStrokeData[] {
+  return strokes.map((stroke) => ({
+    ...stroke,
+    points: stroke.points.map((point) => ({ ...point })),
+  }));
+}
 
 export class MoveCommand implements Command {
   readonly label: string;
@@ -246,6 +255,42 @@ export class UpdateTextConfigCommand implements Command {
     }
 
     element.updateConfig(config);
+    engine.syncElementsToStore();
+  }
+}
+
+export class UpdateDrawingStrokesCommand implements Command {
+  readonly label = 'Update drawing';
+  private elementId: string;
+  private before: DrawingStrokeData[];
+  private after: DrawingStrokeData[];
+
+  constructor(elementId: string, before: DrawingStrokeData[], after: DrawingStrokeData[]) {
+    this.elementId = elementId;
+    this.before = cloneStrokes(before);
+    this.after = cloneStrokes(after);
+  }
+
+  execute() {
+    this.apply(this.after);
+  }
+
+  undo() {
+    this.apply(this.before);
+  }
+
+  redo() {
+    this.execute();
+  }
+
+  private apply(strokes: DrawingStrokeData[]) {
+    const engine = EditorEngine.getInstance();
+    const element = engine.getElement(this.elementId);
+    if (!(element instanceof DrawingElement)) {
+      return;
+    }
+
+    element.updateStrokes(strokes);
     engine.syncElementsToStore();
   }
 }

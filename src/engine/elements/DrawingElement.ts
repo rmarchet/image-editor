@@ -56,21 +56,34 @@ export class DrawingElement extends BaseElement {
   }
 
   get width(): number {
-    return this._width;
+    return this.graphics.width || this._width;
   }
   set width(v: number) {
-    this._width = v;
+    const next = Math.max(1, v);
+    if (this.graphics.width > 0) {
+      this.graphics.width = next;
+    }
+    this._width = next;
   }
 
   get height(): number {
-    return this._height;
+    return this.graphics.height || this._height;
   }
   set height(v: number) {
-    this._height = v;
+    const next = Math.max(1, v);
+    if (this.graphics.height > 0) {
+      this.graphics.height = next;
+    }
+    this._height = next;
   }
 
   get strokes(): DrawingStrokeData[] {
     return cloneStrokes(this._strokes);
+  }
+
+  updateStrokes(strokes: DrawingStrokeData[]) {
+    this._strokes = cloneStrokes(strokes);
+    this.redraw();
   }
 
   addStroke(stroke: DrawingStrokeData) {

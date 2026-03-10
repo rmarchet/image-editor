@@ -52,6 +52,7 @@ export const SidePanel = ({ panel }: SidePanelProps) => {
       <Box
         px={4}
         py="14px"
+        bg="#7c3aed55"
         borderBottom="1px solid"
         borderColor="#313244"
         className='sidebar-panel-header'

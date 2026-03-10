@@ -118,6 +118,8 @@ export class FilterManager {
         }
       }
     }
+
+    engine.syncElementsToStore();
   }
 
   clearFilters() {
@@ -132,5 +134,7 @@ export class FilterManager {
         el.appliedFilterId = null;
       }
     }
+
+    engine.syncElementsToStore();
   }
 }

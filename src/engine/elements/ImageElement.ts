@@ -23,6 +23,7 @@ export class ImageElement extends BaseElement {
   }
   set width(v: number) {
     this.sprite.width = v;
+    this.container.pivot.set(this.sprite.width / 2, this.sprite.height / 2);
   }
 
   get height(): number {
@@ -30,6 +31,7 @@ export class ImageElement extends BaseElement {
   }
   set height(v: number) {
     this.sprite.height = v;
+    this.container.pivot.set(this.sprite.width / 2, this.sprite.height / 2);
   }
 
   get sourceWidth() {

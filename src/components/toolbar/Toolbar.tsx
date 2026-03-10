@@ -1,5 +1,12 @@
-import { Flex, Box, Text } from '@chakra-ui/react';
+import { Flex, Box } from '@chakra-ui/react';
+import type { ReactNode } from 'react';
 import { Tooltip } from '../Tooltip';
+import { ToolButton } from './ToolButton';
+import { PropInput } from './PropInput';
+import { ColorInput } from './ColorInput';
+import { TinyNumberInput } from './TinyNumberInput';
+import { TinyToggleButton } from './TinyToggleButton';
+import { Divider } from './Divider';
 import {
   BiPointer,
   BiCrop,
@@ -22,12 +29,14 @@ import type { ShapeElement } from '../../engine/elements/ShapeElement';
 import type { ShapeConfig } from '../../engine/elements/ShapeElement';
 import type { TextElement } from '../../engine/elements/TextElement';
 import type { TextConfig } from '../../engine/elements/TextElement';
-import { UpdateTextConfigCommand } from '../../engine/history/commands';
+import type { DrawingElement } from '../../engine/elements/DrawingElement';
+import { UpdateDrawingStrokesCommand, UpdateTextConfigCommand } from '../../engine/history/commands';
+import type { DrawingStrokeData } from '../../types';
 import { exportCanvas } from '../../utils/export';
 import { saveProjectToFile } from '../../utils/projectFile';
 import type { ToolType } from '../../types';
 
-const tools: { id: ToolType; icon: React.ReactNode; label: string }[] = [
+const tools: { id: ToolType; icon: ReactNode; label: string }[] = [
   { id: 'select', icon: <BiPointer size={16} />, label: 'Select' },
   { id: 'crop', icon: <BiCrop size={16} />, label: 'Crop' },
 ];
@@ -64,8 +73,18 @@ export const Toolbar = () => {
     return element as TextElement;
   })();
 
+  const selectedDrawing = (() => {
+    if (selectedIds.length !== 1) return null;
+    const engine = EditorEngine.getInstance();
+    if (!engine.initialized) return null;
+    const element = engine.getElement(selectedIds[0]);
+    if (!element || element.type !== 'drawing') return null;
+    return element as DrawingElement;
+  })();
+
   const selectedShapeConfig = selectedShape?.config;
   const selectedTextConfig = selectedText?.config;
+  const selectedDrawingColor = selectedDrawing?.strokes[0]?.color ?? '#000000';
 
   const handleFlipH = () => {
     const engine = EditorEngine.getInstance();
@@ -143,6 +162,32 @@ export const Toolbar = () => {
     await saveProjectToFile();
   };
 
+  const handleUpdateDrawingColor = (color: string) => {
+    if (selectedIds.length !== 1) return;
+    const engine = EditorEngine.getInstance();
+    if (!engine.initialized) return;
+
+    const element = engine.getElement(selectedIds[0]);
+    if (!element || element.type !== 'drawing') return;
+
+    const drawingElement = element as DrawingElement;
+    const before = drawingElement.strokes;
+    if (before.length === 0) return;
+
+    const hasChanged = before.some((stroke) => stroke.color !== color);
+    if (!hasChanged) return;
+
+    const after: DrawingStrokeData[] = before.map((stroke) => ({
+      ...stroke,
+      points: stroke.points.map((point) => ({ ...point })),
+      color,
+    }));
+
+    useHistoryStore
+      .getState()
+      .push(new UpdateDrawingStrokesCommand(drawingElement.id, before, after));
+  };
+
   return (
     <Flex
       h="48px"
@@ -183,6 +228,7 @@ export const Toolbar = () => {
               label="Undo"
               onClick={undo}
               disabled={!canUndo}
+              showLabel={false}
             />
           </span>
         </Tooltip>
@@ -193,6 +239,7 @@ export const Toolbar = () => {
               label="Redo"
               onClick={redo}
               disabled={!canRedo}
+              showLabel={false}
             />
           </span>
         </Tooltip>
@@ -308,6 +355,11 @@ export const Toolbar = () => {
                     })
                   }
                 />
+                <ColorInput
+                  label="Text"
+                  value={selectedTextConfig.fill}
+                  onChange={(v) => handleUpdateTextConfig({ fill: v })}
+                />
                 <TinyNumberInput
                   label="Size"
                   value={selectedTextConfig.fontSize}
@@ -335,6 +387,19 @@ export const Toolbar = () => {
                     onClick={() => handleUpdateTextConfig({ align: 'right' })}
                   />
                 </Flex>
+              </Flex>
+            </>
+          )}
+
+          {selectedDrawing && (
+            <>
+              <Divider />
+              <Flex alignItems="center" gap={2} ml={1}>
+                <ColorInput
+                  label="Line"
+                  value={selectedDrawingColor}
+                  onChange={handleUpdateDrawingColor}
+                />
               </Flex>
             </>
           )}
@@ -382,179 +447,3 @@ export const Toolbar = () => {
     </Flex>
   );
 };
-
-const ToolButton = ({
-  icon,
-  label,
-  active,
-  disabled,
-  accent,
-  showLabel = true,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-  disabled?: boolean;
-  accent?: boolean;
-  showLabel?: boolean;
-  onClick?: () => void;
-}) => (
-  <Box
-    as="button"
-    display="flex"
-    alignItems="center"
-    gap={1.5}
-    px={1.5}
-    py={1.5}
-    borderRadius="6px"
-    fontSize="xs"
-    fontWeight="500"
-    bg={active ? '#7c3aed' : accent ? '#7c3aed' : 'transparent'}
-    color={active || accent ? 'white' : disabled ? '#a0aec0' : '#4a5568'}
-    cursor={disabled ? 'not-allowed' : 'pointer'}
-    opacity={disabled ? 0.5 : 1}
-    transition="all 0.1s"
-    _hover={disabled ? {} : { bg: active || accent ? '#6d28d9' : '#f7fafc' }}
-    onClick={disabled ? undefined : onClick}
-    aria-label={label}
-  >
-    {icon}
-    {showLabel && <Text display={{ base: 'none', md: 'inline' }}>{label}</Text>}
-  </Box>
-);
-
-const PropInput = ({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  onChange: (v: number) => void;
-}) => (
-  <Flex alignItems="center" gap={1}>
-    <Text fontSize="10px" color="gray.400" fontWeight="600" w="12px">
-      {label}
-    </Text>
-    <input
-      type="number"
-      value={value}
-      onChange={(e) => onChange(Number(e.target.value))}
-      style={{
-        width: 52,
-        padding: '2px 6px',
-        fontSize: 11,
-        border: '1px solid #e2e8f0',
-        borderRadius: 4,
-        background: '#f7fafc',
-        color: '#2d3748',
-      }}
-    />
-  </Flex>
-);
-
-const ColorInput = ({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) => (
-  <Flex alignItems="center" gap={1}>
-    <Text fontSize="10px" color="gray.400" fontWeight="600">
-      {label}
-    </Text>
-    <input
-      type="color"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      style={{
-        width: 26,
-        height: 20,
-        padding: 0,
-        border: '1px solid #e2e8f0',
-        borderRadius: 4,
-        background: '#f7fafc',
-        cursor: 'pointer',
-      }}
-    />
-  </Flex>
-);
-
-const TinyNumberInput = ({
-  label,
-  value,
-  min,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min?: number;
-  onChange: (v: number) => void;
-}) => (
-  <Flex alignItems="center" gap={1}>
-    <Text fontSize="10px" color="gray.400" fontWeight="600">
-      {label}
-    </Text>
-    <input
-      type="number"
-      value={Math.round(value)}
-      min={min}
-      step={1}
-      onChange={(e) => {
-        const next = Number(e.target.value);
-        if (Number.isNaN(next)) return;
-        onChange(next);
-      }}
-      style={{
-        width: 46,
-        padding: '2px 4px',
-        fontSize: 11,
-        border: '1px solid #e2e8f0',
-        borderRadius: 4,
-        background: '#f7fafc',
-        color: '#2d3748',
-      }}
-    />
-  </Flex>
-);
-
-const TinyToggleButton = ({
-  label,
-  active,
-  onClick,
-  style,
-}: {
-  label: React.ReactNode;
-  active?: boolean;
-  onClick?: () => void;
-  style?: React.CSSProperties;
-}) => (
-  <Box
-    as="button"
-    onClick={onClick}
-    minW="24px"
-    style={style}
-    h="22px"
-    px={1.5}
-    borderRadius="4px"
-    border="1px solid"
-    borderColor={active ? '#7c3aed' : '#e2e8f0'}
-    bg={active ? '#ede9fe' : '#f7fafc'}
-    color={active ? '#5b21b6' : '#4a5568'}
-    fontSize="11px"
-    fontWeight="700"
-    lineHeight="1"
-    cursor="pointer"
-    _hover={{ bg: active ? '#e9d5ff' : '#edf2f7' }}
-  >
-    {label}
-  </Box>
-);
-
-const Divider = () => (
-  <Box w="1px" h="24px" bg="#e2e8f0" mx={1} flexShrink={0} />
-);

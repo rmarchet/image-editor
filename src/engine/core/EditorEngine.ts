@@ -1,4 +1,4 @@
-import { Application, Container, Graphics } from 'pixi.js';
+import { Application, BlurFilter, Container, Graphics } from 'pixi.js';
 import { Viewport } from './Viewport';
 import { SelectionManager } from '../selection/SelectionManager';
 import { TransformController } from '../selection/TransformController';
@@ -16,6 +16,7 @@ export class EditorEngine {
   transform!: TransformController;
   toolManager!: ToolManager;
 
+  private canvasShadow!: Graphics;
   private canvasBg!: Graphics;
   private elementsLayer!: Container;
   private overlayLayer!: Container;
@@ -64,6 +65,11 @@ export class EditorEngine {
     this.viewport = new Viewport(this.app);
     this.app.stage.addChild(this.viewport.container);
 
+    this.canvasShadow = new Graphics();
+    this.canvasShadow.eventMode = 'none';
+    this.canvasShadow.filters = [new BlurFilter({ strength: 6 })];
+    this.viewport.container.addChild(this.canvasShadow);
+
     this.canvasBg = new Graphics();
     this.viewport.container.addChild(this.canvasBg);
 
@@ -90,13 +96,25 @@ export class EditorEngine {
 
   private drawCanvasBackground() {
     const { canvasWidth, canvasHeight, backgroundColor } = useEditorStore.getState();
+    this.canvasShadow.clear();
     this.canvasBg.clear();
+
+    const shadowSpread = 6;
+    const shadowOffsetY = 10;
+    this.canvasShadow.roundRect(
+      -shadowSpread,
+      shadowOffsetY - shadowSpread,
+      canvasWidth + shadowSpread * 2,
+      canvasHeight + shadowSpread * 2,
+      4
+    );
+    this.canvasShadow.fill({ color: 0x000000, alpha: 0.1 });
 
     this.canvasBg.roundRect(0, 0, canvasWidth, canvasHeight, 0);
     this.canvasBg.fill(backgroundColor);
 
     this.canvasBg.rect(-2, -2, canvasWidth + 4, canvasHeight + 4);
-    this.canvasBg.stroke({ width: 1, color: 0xcccccc });
+    this.canvasBg.stroke({ width: 1, color: 0xbbbbbb });
   }
 
   private setupRenderLoop() {

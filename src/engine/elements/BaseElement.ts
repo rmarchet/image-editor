@@ -97,6 +97,7 @@ export abstract class BaseElement {
       name: this.name,
       locked: this.locked,
       visible: this.visible,
+      appliedFilterId: this.appliedFilterId,
     };
   }
 

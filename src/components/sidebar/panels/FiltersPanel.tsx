@@ -14,7 +14,7 @@ interface FilterPreset {
 const getFilters = (): FilterPreset[] => [
   {
     id: 'none',
-    name: ' None',
+    name: 'None',
     icon: <BiBlock size={12} />,
     apply: () => applyFilter(null, null),
   },
@@ -116,10 +116,13 @@ function applyFilter(filter: ColorMatrixFilter | BlurFilter | null, filterId: st
       el.appliedFilterId = filterId;
     }
   }
+
+  engine.syncElementsToStore();
 }
 
 export const FiltersPanel = () => {
   const selectedIds = useElementStore((s) => s.selectedIds);
+  const elements = useElementStore((s) => s.elements);
   const filters = getFilters();
 
   if (selectedIds.length === 0) {
@@ -132,30 +135,55 @@ export const FiltersPanel = () => {
     );
   }
 
+  const selectedFilterIds = selectedIds.map((id) => {
+    const snapshot = elements.find((element) => element.id === id);
+    return snapshot?.appliedFilterId ?? null;
+  });
+
+  const normalizedFilterIds = selectedFilterIds.map((id) => id ?? 'none');
+  const uniqueFilterIds = new Set(normalizedFilterIds);
+  const isMixed = uniqueFilterIds.size > 1;
+  const activeFilterId = isMixed
+    ? null
+    : normalizedFilterIds[0] ?? 'none';
+
   return (
-    <SimpleGrid columns={2} gap={2}>
-      {filters.map((filter) => (
-        <Box
-          key={filter.id}
-          as="button"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          p={3}
-          borderRadius="8px"
-          bg="#2a2a3e"
-          gap={1}
-          color="#cdd6f4"
-          cursor="pointer"
-          transition="all 0.15s"
-          _hover={{ bg: '#3a3a5e' }}
-          onClick={filter.apply}
-          fontSize="xs"
-        >
-          {filter.icon && filter.icon}
-          {filter.name}
-        </Box>
-      ))}
-    </SimpleGrid>
+    <VStack alignItems="stretch" gap={2}>
+      {isMixed && (
+        <Text fontSize="xs" color="#a78bfa" fontWeight="600">
+          Mixed
+        </Text>
+      )}
+      <SimpleGrid columns={2} gap={2}>
+        {filters.map((filter) => {
+          const isActive = !isMixed && activeFilterId === filter.id;
+
+          return (
+            <Box
+              key={filter.id}
+              as="button"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              p={3}
+              borderRadius="8px"
+              border="1px solid"
+              borderColor={isActive ? '#a78bfa' : 'transparent'}
+              bg={isActive ? '#7c3aed' : '#2a2a3e'}
+              gap={1}
+              color="#cdd6f4"
+              cursor="pointer"
+              transition="all 0.15s"
+              _hover={{ bg: isActive ? '#6d28d9' : '#3a3a5e' }}
+              onClick={filter.apply}
+              fontSize="xs"
+            >
+              {filter.icon && filter.icon}
+              {filter.name}
+            </Box>
+          );
+        })}
+      </SimpleGrid>
+    </VStack>
   );
 };
