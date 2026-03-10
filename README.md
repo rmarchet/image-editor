@@ -71,6 +71,15 @@ Default URL: `http://localhost:5173`
 - `yarn preview` - preview production build
 - `yarn type-check` - run TypeScript checks
 
+## Deploy in a Subfolder
+
+- Build now uses a relative base path by default (`./`), so compiled assets are resolved relative to the deployed `index.html`.
+- If you need an explicit base path, set `VITE_BASE_PATH` at build time.
+
+```bash
+VITE_BASE_PATH=/my/subfolder/ yarn build
+```
+
 ## Architecture Overview
 
 ```

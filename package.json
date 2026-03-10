@@ -20,7 +20,9 @@
   ],
   "scripts": {
     "dev": "vite",
+    "prebuild": "rm -rf dist",
     "build": "tsc -b && vite build",
+    "build:release": "VITE_MINIFY=terser VITE_SOURCEMAP=false VITE_DROP_CONSOLE=true yarn build",
     "preview": "vite preview",
     "type-check": "tsc --noEmit"
   },
@@ -39,6 +41,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",
+    "terser": "^5.46.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1"
   }
