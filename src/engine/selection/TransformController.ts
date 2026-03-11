@@ -19,6 +19,11 @@ interface TransformBounds {
   bottom: number;
 }
 
+interface ResizeDimensions {
+  width: number;
+  height: number;
+}
+
 export class TransformController {
   private selection: SelectionManager;
   private viewport: Viewport;
@@ -83,7 +88,7 @@ export class TransformController {
     return false;
   }
 
-  handlePointerMove(worldX: number, worldY: number) {
+  handlePointerMove(worldX: number, worldY: number, keepAspectRatio = false) {
     if (!this.mode || !this.targetElement || !this.startState) return;
 
     const dx = worldX - this.startPointer.x;
@@ -129,8 +134,28 @@ export class TransformController {
           newBottom = Math.max(startTop + minSize, startBottom + dy);
         }
 
-        const newW = Math.max(minSize, newRight - newLeft);
-        const newH = Math.max(minSize, newBottom - newTop);
+        let newW = Math.max(minSize, newRight - newLeft);
+        let newH = Math.max(minSize, newBottom - newTop);
+
+        if (keepAspectRatio) {
+          const constrained = this.constrainResizeToAspectRatio(newW, newH, minSize);
+          newW = constrained.width;
+          newH = constrained.height;
+
+          if (mode === 'resize-se') {
+            newRight = newLeft + newW;
+            newBottom = newTop + newH;
+          } else if (mode === 'resize-nw') {
+            newLeft = newRight - newW;
+            newTop = newBottom - newH;
+          } else if (mode === 'resize-ne') {
+            newRight = newLeft + newW;
+            newTop = newBottom - newH;
+          } else if (mode === 'resize-sw') {
+            newLeft = newRight - newW;
+            newBottom = newTop + newH;
+          }
+        }
 
         this.targetElement.width = newW;
         this.targetElement.height = newH;
@@ -191,5 +216,43 @@ export class TransformController {
       height: el.height,
       rotation: el.rotation,
     };
+  }
+
+  private constrainResizeToAspectRatio(
+    proposedWidth: number,
+    proposedHeight: number,
+    minSize: number,
+  ): ResizeDimensions {
+    if (!this.startState) {
+      return { width: proposedWidth, height: proposedHeight };
+    }
+
+    const startWidth = Math.max(1, this.startState.width);
+    const startHeight = Math.max(1, this.startState.height);
+    const aspectRatio = startWidth / startHeight;
+
+    if (!Number.isFinite(aspectRatio) || aspectRatio <= 0) {
+      return { width: proposedWidth, height: proposedHeight };
+    }
+
+    const minWidth = Math.max(minSize, aspectRatio >= 1 ? minSize * aspectRatio : minSize);
+    const minHeight = Math.max(minSize, aspectRatio >= 1 ? minSize : minSize / aspectRatio);
+
+    const widthDriven: ResizeDimensions = {
+      width: Math.max(minWidth, proposedWidth),
+      height: 0,
+    };
+    widthDriven.height = Math.max(minHeight, widthDriven.width / aspectRatio);
+
+    const heightDriven: ResizeDimensions = {
+      width: 0,
+      height: Math.max(minHeight, proposedHeight),
+    };
+    heightDriven.width = Math.max(minWidth, heightDriven.height * aspectRatio);
+
+    const widthDrivenDelta = Math.abs(widthDriven.height - proposedHeight);
+    const heightDrivenDelta = Math.abs(heightDriven.width - proposedWidth);
+
+    return widthDrivenDelta <= heightDrivenDelta ? widthDriven : heightDriven;
   }
 }

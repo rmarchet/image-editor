@@ -1,5 +1,5 @@
 import { Flex, Box } from '@chakra-ui/react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Tooltip } from '../Tooltip';
 import { ToolButton } from './ToolButton';
 import { PropInput } from './PropInput';
@@ -24,6 +24,7 @@ import { useToolStore } from '../../stores/toolStore';
 import { useHistoryStore } from '../../stores/historyStore';
 import { useElementStore } from '../../stores/elementStore';
 import { EditorEngine } from '../../engine/core/EditorEngine';
+import type { BaseElement } from '../../engine/elements/BaseElement';
 import type { ShapeElement } from '../../engine/elements/ShapeElement';
 import type { ShapeConfig } from '../../engine/elements/ShapeElement';
 import type { TextElement } from '../../engine/elements/TextElement';
@@ -44,7 +45,28 @@ const tools: { id: ToolType; icon: ReactNode; label: string }[] = [
   { id: 'crop', icon: <BiCrop size={16} />, label: 'Crop' },
 ];
 
+const LinkIcon = ({ linked }: { linked: boolean }) => (
+  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path
+      d="M6 5.5H5a3 3 0 1 0 0 6h1M10 5.5h1a3 3 0 1 1 0 6h-1M5.5 8h5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {!linked && (
+      <path
+        d="M3 13L13 3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    )}
+  </svg>
+);
+
 export const Toolbar = () => {
+  const [lockAspectRatio, setLockAspectRatio] = useState(false);
   const activeTool = useToolStore((s) => s.activeTool);
   const setActiveTool = useToolStore((s) => s.setActiveTool);
   const canUndo = useHistoryStore((s) => s.canUndo);
@@ -88,6 +110,88 @@ export const Toolbar = () => {
   const selectedShapeConfig = selectedShape?.config;
   const selectedTextConfig = selectedText?.config;
   const selectedDrawingColor = selectedDrawing?.strokes[0]?.color ?? '#000000';
+
+  const getElementTopLeft = (element: BaseElement) => {
+    const engine = EditorEngine.getInstance();
+    if (!engine.initialized) {
+      return { x: element.x, y: element.y };
+    }
+
+    const bounds = element.container.getBounds(false);
+    return engine.viewport.screenToWorld(bounds.x, bounds.y);
+  };
+
+  const setElementTopLeft = (element: BaseElement, targetX: number, targetY: number) => {
+    const currentTopLeft = getElementTopLeft(element);
+
+    element.x += targetX - currentTopLeft.x;
+    element.y += targetY - currentTopLeft.y;
+
+    // Correct again using measured bounds to avoid drift with transformed elements.
+    const correctedTopLeft = getElementTopLeft(element);
+    element.x += targetX - correctedTopLeft.x;
+    element.y += targetY - correctedTopLeft.y;
+  };
+
+  const getSelectedEngineElement = () => {
+    if (!selectedElement) return null;
+    const engine = EditorEngine.getInstance();
+    if (!engine.initialized) return null;
+    return engine.getElement(selectedElement.id) ?? null;
+  };
+
+  const selectedTopLeft = (() => {
+    const element = getSelectedEngineElement();
+    if (!element) return null;
+    return getElementTopLeft(element);
+  })();
+
+  const handlePositionChange = (axis: 'x' | 'y', value: number) => {
+    const element = getSelectedEngineElement();
+    if (!element) return;
+
+    const currentTopLeft = getElementTopLeft(element);
+    const targetX = axis === 'x' ? value : currentTopLeft.x;
+    const targetY = axis === 'y' ? value : currentTopLeft.y;
+
+    setElementTopLeft(element, targetX, targetY);
+    EditorEngine.getInstance().syncElementsToStore();
+  };
+
+  const handleDimensionChange = (dimension: 'width' | 'height', value: number) => {
+    const element = getSelectedEngineElement();
+    if (!element) return;
+
+    const topLeftBefore = getElementTopLeft(element);
+    const nextValue = Math.max(1, value);
+    const currentWidth = Math.max(1, element.width);
+    const currentHeight = Math.max(1, element.height);
+    const aspectRatio = currentWidth / currentHeight;
+    const engine = EditorEngine.getInstance();
+
+    if (!lockAspectRatio || !Number.isFinite(aspectRatio) || aspectRatio <= 0) {
+      if (dimension === 'width') {
+        element.width = nextValue;
+      } else {
+        element.height = nextValue;
+      }
+
+      setElementTopLeft(element, topLeftBefore.x, topLeftBefore.y);
+      engine.syncElementsToStore();
+      return;
+    }
+
+    if (dimension === 'width') {
+      element.width = nextValue;
+      element.height = Math.max(1, Math.round(nextValue / aspectRatio));
+    } else {
+      element.height = nextValue;
+      element.width = Math.max(1, Math.round(nextValue * aspectRatio));
+    }
+
+    setElementTopLeft(element, topLeftBefore.x, topLeftBefore.y);
+    engine.syncElementsToStore();
+  };
 
   const handleFlipH = () => {
     const engine = EditorEngine.getInstance();
@@ -406,26 +510,34 @@ export const Toolbar = () => {
           <Divider />
 
           <Flex alignItems="center" gap={2} ml={1}>
-            <PropInput label="X" value={Math.round(selectedElement.x)} onChange={(v) => {
-              const engine = EditorEngine.getInstance();
-              const el = engine.getElement(selectedElement.id);
-              if (el) { el.x = v; engine.syncElementsToStore(); }
+            <PropInput label="x" value={Math.round(selectedTopLeft?.x ?? 0)} onChange={(v) => {
+              handlePositionChange('x', v);
             }} />
-            <PropInput label="Y" value={Math.round(selectedElement.y)} onChange={(v) => {
-              const engine = EditorEngine.getInstance();
-              const el = engine.getElement(selectedElement.id);
-              if (el) { el.y = v; engine.syncElementsToStore(); }
+            <PropInput label="y" value={Math.round(selectedTopLeft?.y ?? 0)} onChange={(v) => {
+              handlePositionChange('y', v);
             }} />
+
+            <Divider />
+
             <PropInput label="W" value={Math.round(selectedElement.width)} onChange={(v) => {
-              const engine = EditorEngine.getInstance();
-              const el = engine.getElement(selectedElement.id);
-              if (el) { el.width = v; engine.syncElementsToStore(); }
+              handleDimensionChange('width', v);
             }} />
+            <Tooltip content={lockAspectRatio ? 'Unlock aspect ratio' : 'Lock aspect ratio'}>
+              <span>
+                <TinyToggleButton
+                  label={<LinkIcon linked={lockAspectRatio} />}
+                  active={lockAspectRatio}
+                  onClick={() => setLockAspectRatio((current) => !current)}
+                />
+              </span>
+            </Tooltip>
             <PropInput label="H" value={Math.round(selectedElement.height)} onChange={(v) => {
-              const engine = EditorEngine.getInstance();
-              const el = engine.getElement(selectedElement.id);
-              if (el) { el.height = v; engine.syncElementsToStore(); }
+              handleDimensionChange('height', v);
             }} />
+
+
+            <Divider />
+
             <PropInput label="°" value={Math.round(selectedElement.rotation)} onChange={(v) => {
               const engine = EditorEngine.getInstance();
               const el = engine.getElement(selectedElement.id);

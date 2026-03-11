@@ -5,9 +5,9 @@ import { TextElement } from '../../../engine/elements/TextElement';
 import { useEditorStore } from '../../../stores/editorStore';
 
 const presets = [
-  { label: 'Add Heading', fontSize: 48, fontWeight: 'bold' as const },
-  { label: 'Add Subheading', fontSize: 32, fontWeight: 'bold' as const },
-  { label: 'Add Body Text', fontSize: 18, fontWeight: 'normal' as const },
+  { label: 'Add Heading', placeholder: 'Heading', fontSize: 48, fontWeight: 'bold' as const },
+  { label: 'Add Subheading', placeholder: 'Subheading', fontSize: 32, fontWeight: 'bold' as const },
+  { label: 'Add Paragraph', placeholder: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas elit odio, tristique vel nulla sed, venenatis rutrum tortor. Maecenas nec ante pulvinar neque eleifend suscipit a non massa.', fontSize: 18, fontWeight: 'normal' as const },
 ];
 
 export const TextPanel = () => {
@@ -17,7 +17,7 @@ export const TextPanel = () => {
 
     const { canvasWidth, canvasHeight } = useEditorStore.getState();
     const element = new TextElement({
-      text: preset.label.replace('Add ', ''),
+      text: preset.placeholder,
       fontSize: preset.fontSize,
       fontWeight: preset.fontWeight,
     });

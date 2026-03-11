@@ -36,8 +36,8 @@ export class SelectTool implements BaseTool {
     useTextEditStore.getState().startSession(hit.id, hit.text);
   }
 
-  onPointerMove(worldX: number, worldY: number) {
-    this.engine.transform.handlePointerMove(worldX, worldY);
+  onPointerMove(worldX: number, worldY: number, event: PointerEvent) {
+    this.engine.transform.handlePointerMove(worldX, worldY, event.shiftKey);
   }
 
   onPointerUp() {
