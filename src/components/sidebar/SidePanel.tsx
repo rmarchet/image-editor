@@ -61,7 +61,24 @@ export const SidePanel = ({ panel }: SidePanelProps) => {
           {panelTitles[panel]}
         </Heading>
       </Box>
-      <Box flex="1" overflowY="auto" p={3}>
+      <Box
+        flex="1"
+        overflowY="auto"
+        p={3}
+        className='sidebar-panel-content'
+        css={{
+          '&::-webkit-scrollbar': {
+            width: '7px',
+          },
+          '&::-webkit-scrollbar-track': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: '#c689fe6e',
+            borderRadius: '24px',
+          },
+        }}
+      >
         <PanelComponent />
       </Box>
     </Box>

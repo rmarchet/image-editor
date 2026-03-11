@@ -132,6 +132,153 @@ export class ShapeElement extends BaseElement {
     this.graphics.closePath();
   }
 
+  private drawCloud(width: number, height: number) {
+    // Nuvola classica: 3 cerchi di diversa dimensione + base dritta
+    const g = this.graphics;
+    const baseY = height * 0.6;
+
+    // Tre cerchi di diverse dimensioni
+    const left =   { cx: width * 0.18, cy: baseY - 5, r: width * 0.18 };
+    const center = { cx: width * 0.45, cy: height * 0.34, r: width * 0.23 };
+    const right =  { cx: width * 0.75, cy: baseY - 5, r: width * 0.25 };
+
+    const steps = 400;
+    const outline: { x: number; y: number }[] = [];
+
+    // Calcola l'inviluppo superiore (il punto più alto per ogni colonna x)
+    for (let i = 0; i <= steps; i++) {
+      const x = (i / steps) * width;
+      let minY = baseY;
+
+      for (const p of [left, center, right]) {
+        const dx = x - p.cx;
+        if (Math.abs(dx) < p.r) {
+          const arcY = p.cy - Math.sqrt(p.r * p.r - dx * dx);
+          minY = Math.min(minY, arcY);
+        }
+      }
+
+      outline.push({ x, y: minY });
+    }
+
+    // Contorno superiore (la parte fluffy)
+    g.moveTo(0, baseY);
+    for (const p of outline) {
+      g.lineTo(p.x, p.y);
+    }
+
+    // Base dritta (linea orizzontale)
+    g.lineTo(width, baseY);
+    g.lineTo(0, baseY);
+    g.closePath();
+  }
+
+  private drawDiamond(width: number, height: number) {
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    this.graphics.moveTo(centerX, 0);
+    this.graphics.lineTo(width, centerY);
+    this.graphics.lineTo(centerX, height);
+    this.graphics.lineTo(0, centerY);
+    this.graphics.closePath();
+  }
+
+  private drawCrescent(width: number, height: number) {
+    const R = Math.min(width, height) / 2;
+    const cx = width / 2;
+    const cy = height / 2;
+    const d = R * 0.55; // distanza tra i centri dei due cerchi
+    const points = 100;
+
+    // Altezza del punto di intersezione
+    const h = Math.sqrt(R * R - (d * d) / 4);
+
+    // Angoli dei punti di intersezione su Cerchio A (centro: cx, cy)
+    const aTop = Math.atan2(-h, d / 2);
+    const aBot = Math.atan2(h, d / 2);
+
+    // Angoli dei punti di intersezione su Cerchio B (centro: cx+d, cy)
+    const bBot = Math.atan2(h, -d / 2);
+    const bTop = Math.atan2(-h, -d / 2);
+
+    // Arco 1: arco SINISTRO del Cerchio A (la parte non coperta da B)
+    // Da punto intersezione alto, decrescendo angolo, passando per ±π, fino a punto basso
+    const sweep1 = 2 * Math.PI - (aBot - aTop);
+    this.graphics.moveTo(cx + Math.cos(aTop) * R, cy + Math.sin(aTop) * R);
+
+    for (let i = 1; i <= points; i++) {
+      const angle = aTop - (sweep1 * i) / points;
+      this.graphics.lineTo(cx + Math.cos(angle) * R, cy + Math.sin(angle) * R);
+    }
+
+    // Arco 2: arco SINISTRO del Cerchio B (la parte dentro A, che crea la concavità)
+    // Da punto intersezione basso, crescendo angolo, passando per π, fino a punto alto
+    const target = bTop + 2 * Math.PI;
+    const sweep2 = target - bBot;
+
+    for (let i = 1; i <= points; i++) {
+      const angle = bBot + (sweep2 * i) / points;
+      this.graphics.lineTo((cx + d) + Math.cos(angle) * R, cy + Math.sin(angle) * R);
+    }
+
+    this.graphics.closePath();
+  }
+
+  private drawRing(width: number, height: number) {
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const outerRadiusX = width / 2;
+    const outerRadiusY = height / 2;
+    const innerRadiusX = outerRadiusX * 0.6;
+    const innerRadiusY = outerRadiusY * 0.6;
+
+    this.graphics.circle(centerX, centerY, outerRadiusX);
+    this.graphics.fill(this._config.fillColor);
+    this.graphics.stroke({ width: this._config.strokeWidth, color: this._config.strokeColor });
+
+    this.graphics.circle(centerX, centerY, innerRadiusX);
+    this.graphics.fill('#ffffff');
+  }
+
+  private drawRoundedRectangle(width: number, height: number) {
+    const radius = Math.min(width, height) * 0.15;
+    this.graphics.roundRect(0, 0, width, height, radius);
+  }
+
+  private drawPlus(width: number, height: number) {
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const baseSize = Math.min(width, height);
+    
+    // Usa proporzioni basate sulla dimensione minima per mantenere simmetria
+    const armWidth = baseSize * 0.3;    // larghezza di ogni braccio
+    const armLength = baseSize * 0.65;  // lunghezza di ogni braccio
+
+    // Disegna il perimetro della croce come un unico percorso chiuso
+    // 12 vertici in senso orario partendo dal top-left
+    const vertices = [
+      { x: centerX - armWidth / 2, y: centerY - armLength / 2 },
+      { x: centerX + armWidth / 2, y: centerY - armLength / 2 },
+      { x: centerX + armWidth / 2, y: centerY - armWidth / 2 },
+      { x: centerX + armLength / 2, y: centerY - armWidth / 2 },
+      { x: centerX + armLength / 2, y: centerY + armWidth / 2 },
+      { x: centerX + armWidth / 2, y: centerY + armWidth / 2 },
+      { x: centerX + armWidth / 2, y: centerY + armLength / 2 },
+      { x: centerX - armWidth / 2, y: centerY + armLength / 2 },
+      { x: centerX - armWidth / 2, y: centerY + armWidth / 2 },
+      { x: centerX - armLength / 2, y: centerY + armWidth / 2 },
+      { x: centerX - armLength / 2, y: centerY - armWidth / 2 },
+      { x: centerX - armWidth / 2, y: centerY - armWidth / 2 },
+    ];
+
+    this.graphics.moveTo(vertices[0].x, vertices[0].y);
+    for (let i = 1; i < vertices.length; i++) {
+      this.graphics.lineTo(vertices[i].x, vertices[i].y);
+    }
+    this.graphics.closePath();
+  }
+
   private draw() {
     const g = this.graphics;
     const { shapeType, fillColor, strokeColor, strokeWidth, shapeWidth, shapeHeight } =
@@ -189,6 +336,34 @@ export class ShapeElement extends BaseElement {
         break;
       case 'heart':
         this.drawHeart(shapeWidth, shapeHeight);
+        g.fill(fillColor);
+        g.stroke({ width: strokeWidth, color: strokeColor });
+        break;
+      case 'cloud':
+        this.drawCloud(shapeWidth, shapeHeight);
+        g.fill(fillColor);
+        g.stroke({ width: strokeWidth, color: strokeColor });
+        break;
+      case 'diamond':
+        this.drawDiamond(shapeWidth, shapeHeight);
+        g.fill(fillColor);
+        g.stroke({ width: strokeWidth, color: strokeColor });
+        break;
+      case 'crescent':
+        this.drawCrescent(shapeWidth, shapeHeight);
+        g.fill(fillColor);
+        g.stroke({ width: strokeWidth, color: strokeColor });
+        break;
+      case 'ring':
+        this.drawRing(shapeWidth, shapeHeight);
+        break;
+      case 'roundedRectangle':
+        this.drawRoundedRectangle(shapeWidth, shapeHeight);
+        g.fill(fillColor);
+        g.stroke({ width: strokeWidth, color: strokeColor });
+        break;
+      case 'plus':
+        this.drawPlus(shapeWidth, shapeHeight);
         g.fill(fillColor);
         g.stroke({ width: strokeWidth, color: strokeColor });
         break;

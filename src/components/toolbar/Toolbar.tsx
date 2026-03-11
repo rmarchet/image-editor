@@ -523,13 +523,14 @@ export const Toolbar = () => {
               handleDimensionChange('width', v);
             }} />
             <Tooltip content={lockAspectRatio ? 'Unlock aspect ratio' : 'Lock aspect ratio'}>
-              <span>
+              
+                <Flex alignItems="center" gap={1}>
                 <TinyToggleButton
                   label={<LinkIcon linked={lockAspectRatio} />}
                   active={lockAspectRatio}
                   onClick={() => setLockAspectRatio((current) => !current)}
                 />
-              </span>
+                </Flex>
             </Tooltip>
             <PropInput label="H" value={Math.round(selectedElement.height)} onChange={(v) => {
               handleDimensionChange('height', v);

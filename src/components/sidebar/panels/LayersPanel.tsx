@@ -70,7 +70,7 @@ export const LayersPanel = () => {
   const actionButtonSize = 18;
 
   return (
-    <VStack gap={1} alignItems="stretch">
+    <VStack gap={1} alignItems="stretch" className='layers-panel'>
       {reversedElements.length === 0 && (
         <Text fontSize="xs" color="#6c7086" textAlign="center" py={4}>
           No elements yet

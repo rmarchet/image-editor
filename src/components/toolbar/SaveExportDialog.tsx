@@ -51,7 +51,7 @@ export const SaveExportDialog = () => {
     const name = filename.trim() || 'artboard';
     switch (format) {
       case 'project':
-        await saveProjectToFile();
+        await saveProjectToFile(name);
         break;
       case 'png':
         exportCanvas('png', 1, name);

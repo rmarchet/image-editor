@@ -212,6 +212,7 @@ export const CanvasHost = () => {
     >
       {activeElementId && overlayStyle && (
         <textarea
+          data-text-edit-overlay="true"
           ref={textareaRef}
           value={draftText}
           onChange={(event) => setDraftText(event.target.value)}

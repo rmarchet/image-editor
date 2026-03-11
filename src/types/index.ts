@@ -9,7 +9,13 @@ export type ShapeType =
   | 'triangle'
   | 'pentagon'
   | 'hexagon'
-  | 'heart';
+  | 'heart'
+  | 'cloud'
+  | 'diamond'
+  | 'crescent'
+  | 'ring'
+  | 'roundedRectangle'
+  | 'plus';
 
 export type SidebarPanel =
   | 'upload'

@@ -3,6 +3,7 @@ import { useToolStore } from '../stores/toolStore';
 import { useElementStore } from '../stores/elementStore';
 import { EditorEngine } from '../engine/core/EditorEngine';
 import { useEditorStore } from '../stores/editorStore';
+import { useTextEditStore } from '../stores/textEditStore';
 import type { ToolType } from '../types';
 
 const SHORTCUT_MAP: Record<string, () => void> = {
@@ -62,14 +63,50 @@ function buildKey(e: KeyboardEvent): string {
   return parts.join('+');
 }
 
+function isEditableTarget(target: HTMLElement | null): boolean {
+  return Boolean(
+    target &&
+      (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+  );
+}
+
+function handleTextEditShortcut(key: string, event: KeyboardEvent): boolean {
+  if (!useTextEditStore.getState().activeElementId) {
+    return false;
+  }
+
+  if (key !== 'ctrl+a' && key !== 'meta+a') {
+    return false;
+  }
+
+  event.preventDefault();
+
+  const activeElement = document.activeElement;
+  const overlay =
+    activeElement instanceof HTMLTextAreaElement
+      ? activeElement
+      : document.querySelector('textarea[data-text-edit-overlay="true"]');
+
+  if (overlay instanceof HTMLTextAreaElement) {
+    overlay.focus();
+    overlay.select();
+  }
+
+  return true;
+}
+
 export function setupKeyboardShortcuts(): () => void {
   const handler = (e: KeyboardEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+    const key = buildKey(e);
+    if (handleTextEditShortcut(key, e)) {
       return;
     }
 
-    const key = buildKey(e);
+    const target = e.target as HTMLElement | null;
+    if (isEditableTarget(target)) {
+      return;
+    }
+
     const action = SHORTCUT_MAP[key];
     if (action) {
       e.preventDefault();

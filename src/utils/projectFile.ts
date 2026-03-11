@@ -222,7 +222,22 @@ async function deserializeElement(data: ProjectElement): Promise<BaseElement | n
   }
 }
 
-export async function saveProjectToFile() {
+function buildProjectFileName(fileName?: string): string {
+  const baseName = fileName?.trim();
+  if (!baseName) {
+    const datePart = new Date().toISOString().slice(0, 10);
+    return `image-editor-${datePart}.${PROJECT_FILE_EXTENSION}`;
+  }
+
+  const extension = `.${PROJECT_FILE_EXTENSION}`;
+  if (baseName.toLowerCase().endsWith(extension)) {
+    return baseName;
+  }
+
+  return `${baseName}${extension}`;
+}
+
+export async function saveProjectToFile(fileName?: string) {
   const engine = EditorEngine.getInstance();
   if (!engine.initialized) return;
 
@@ -244,9 +259,8 @@ export async function saveProjectToFile() {
     elements: serialized,
   };
 
-  const datePart = new Date().toISOString().slice(0, 10);
-  const fileName = `image-editor-${datePart}.${PROJECT_FILE_EXTENSION}`;
-  downloadTextFile(JSON.stringify(payload, null, 2), fileName);
+  const nextFileName = buildProjectFileName(fileName);
+  downloadTextFile(JSON.stringify(payload, null, 2), nextFileName);
 }
 
 export async function loadProjectFromFile(file: File): Promise<ProjectImageElement[]> {
