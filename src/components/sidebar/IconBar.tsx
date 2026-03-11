@@ -57,7 +57,7 @@ export const IconBar = () => {
         className='logo'
       >
         <img
-          src="/favicon.svg"
+          src="./favicon.svg"
           alt="ImageEditor"
           width={32}
           height={32}
