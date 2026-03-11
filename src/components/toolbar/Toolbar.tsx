@@ -12,7 +12,6 @@ import {
   BiCrop,
   BiUndo,
   BiRedo,
-  BiSave,
   BiTrash,
   BiCopy,
   BiMoveHorizontal,
@@ -33,7 +32,11 @@ import type { DrawingElement } from '../../engine/elements/DrawingElement';
 import { UpdateDrawingStrokesCommand, UpdateTextConfigCommand } from '../../engine/history/commands';
 import type { DrawingStrokeData } from '../../types';
 import { exportCanvas } from '../../utils/export';
+import { exportSvg } from '../../utils/exportSvg';
+import { exportPdf } from '../../utils/exportPdf';
 import { saveProjectToFile } from '../../utils/projectFile';
+import { SplitButton } from './SplitButton';
+import { SaveExportDialog } from './SaveExportDialog';
 import type { ToolType } from '../../types';
 
 const tools: { id: ToolType; icon: ReactNode; label: string }[] = [
@@ -152,10 +155,6 @@ export const Toolbar = () => {
     useHistoryStore
       .getState()
       .push(new UpdateTextConfigCommand(textElement.id, before, after));
-  };
-
-  const handleSave = () => {
-    exportCanvas();
   };
 
   const handleSaveProject = async () => {
@@ -439,11 +438,14 @@ export const Toolbar = () => {
       <Box flex="1" />
 
       {/* Save */}
-      <Flex gap={1}>
-        <ToolButton icon={<BiSave size={16} />} label="Save Project" onClick={handleSaveProject} />
-        <Divider />
-        <ToolButton icon={<BiSave size={16} />} label="Save PNG" onClick={handleSave} accent />
-      </Flex>
+      <SplitButton
+        onSave={handleSaveProject}
+        onExportPng={() => exportCanvas('png', 1)}
+        onExportJpeg={() => exportCanvas('jpeg', 0.9)}
+        onExportSvg={() => exportSvg()}
+        onExportPdf={() => exportPdf()}
+      />
+      <SaveExportDialog />
     </Flex>
   );
 };

@@ -8,12 +8,14 @@ interface EditorState {
   backgroundColor: string;
   activePanel: SidebarPanel;
   isPanning: boolean;
+  saveDialogOpen: boolean;
 
   setZoom: (zoom: number) => void;
   setCanvasSize: (width: number, height: number) => void;
   setBackgroundColor: (color: string) => void;
   setActivePanel: (panel: SidebarPanel) => void;
   setIsPanning: (panning: boolean) => void;
+  setSaveDialogOpen: (open: boolean) => void;
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
@@ -23,6 +25,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   backgroundColor: '#ffffff',
   activePanel: null,
   isPanning: false,
+  saveDialogOpen: false,
 
   setZoom: (zoom) => set({ zoom: Math.max(0.1, Math.min(10, zoom)) }),
   setCanvasSize: (canvasWidth, canvasHeight) => set({ canvasWidth, canvasHeight }),
@@ -32,4 +35,5 @@ export const useEditorStore = create<EditorState>((set) => ({
       activePanel: state.activePanel === activePanel ? null : activePanel,
     })),
   setIsPanning: (isPanning) => set({ isPanning }),
+  setSaveDialogOpen: (saveDialogOpen) => set({ saveDialogOpen }),
 }));

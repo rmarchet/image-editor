@@ -2,9 +2,13 @@ import { RenderTexture } from 'pixi.js';
 import { EditorEngine } from '../engine/core/EditorEngine';
 import { useEditorStore } from '../stores/editorStore';
 
-export function exportCanvas(format: 'png' | 'jpeg' = 'png', quality = 1) {
+/**
+ * Renders the artboard at 1:1 scale and returns the raw HTMLCanvasElement.
+ * Returns null if the engine is not initialized.
+ */
+export function captureArtboardCanvas(): HTMLCanvasElement | null {
   const engine = EditorEngine.getInstance();
-  if (!engine.initialized) return;
+  if (!engine.initialized) return null;
 
   const { canvasWidth, canvasHeight } = useEditorStore.getState();
 
@@ -25,7 +29,6 @@ export function exportCanvas(format: 'png' | 'jpeg' = 'png', quality = 1) {
   let canvas: HTMLCanvasElement | null = null;
 
   try {
-    // Render in artboard space so output is strictly cropped to canvas bounds.
     stage.scale.set(1);
     stage.position.set(0, 0);
 
@@ -42,13 +45,22 @@ export function exportCanvas(format: 'png' | 'jpeg' = 'png', quality = 1) {
     exportTexture.destroy();
   }
 
+  return canvas;
+}
+
+export function exportCanvas(
+  format: 'png' | 'jpeg' = 'png',
+  quality = 1,
+  filename = 'artboard',
+) {
+  const canvas = captureArtboardCanvas();
   if (!canvas) return;
 
   const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
   const dataUrl = canvas.toDataURL(mimeType, quality);
 
   const link = document.createElement('a');
-  link.download = `image-editor-export.${format}`;
+  link.download = `${filename}.${format}`;
   link.href = dataUrl;
   link.click();
 }

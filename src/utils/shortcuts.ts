@@ -2,7 +2,7 @@ import { useHistoryStore } from '../stores/historyStore';
 import { useToolStore } from '../stores/toolStore';
 import { useElementStore } from '../stores/elementStore';
 import { EditorEngine } from '../engine/core/EditorEngine';
-import { exportCanvas } from './export';
+import { useEditorStore } from '../stores/editorStore';
 import type { ToolType } from '../types';
 
 const SHORTCUT_MAP: Record<string, () => void> = {
@@ -12,8 +12,8 @@ const SHORTCUT_MAP: Record<string, () => void> = {
   'meta+shift+z': () => useHistoryStore.getState().redo(),
   'ctrl+y': () => useHistoryStore.getState().redo(),
   'meta+y': () => useHistoryStore.getState().redo(),
-  'ctrl+s': () => exportCanvas(),
-  'meta+s': () => exportCanvas(),
+  'ctrl+s': () => useEditorStore.getState().setSaveDialogOpen(true),
+  'meta+s': () => useEditorStore.getState().setSaveDialogOpen(true),
   'ctrl+a': () => {
     const engine = EditorEngine.getInstance();
     if (!engine.initialized) return;
