@@ -1,11 +1,29 @@
 import { Box, SimpleGrid, Text } from '@chakra-ui/react';
 import { EditorEngine } from '../../../engine/core/EditorEngine';
-import { BiRectangle, BiCircle, BiRightArrowAlt, BiStar, BiHeart, BiMoon, BiSquareRounded, BiPlus } from 'react-icons/bi';
-import { TbTriangle, TbPentagon, TbHexagon, TbCloud } from 'react-icons/tb';
-import { PiDiamond, PiRadioButton } from "react-icons/pi";
+import { BiRectangle, BiCircleHalf, BiCircle, BiRightArrowAlt, BiStar, BiHeart, BiMoon, BiSquareRounded, BiPlus } from 'react-icons/bi';
+import { TbTriangle, TbArrowBigRight, TbPentagon, TbHexagon, TbCloud } from 'react-icons/tb';
+import { PiDiamond, PiRadioButton } from 'react-icons/pi';
 import { ShapeElement } from '../../../engine/elements/ShapeElement';
 import { useEditorStore } from '../../../stores/editorStore';
 import type { ShapeType } from '../../../types';
+
+const previewColor = '#7c3aed';
+
+function previewStarPoints(pointCount: number, outerRadius: number, innerRadius: number) {
+  const center = 16;
+  const startAngle = -Math.PI / 2;
+  const points: string[] = [];
+
+  for (let index = 0; index < pointCount * 2; index++) {
+    const radius = index % 2 === 0 ? outerRadius : innerRadius;
+    const angle = startAngle + (index * Math.PI) / pointCount;
+    const x = center + Math.cos(angle) * radius;
+    const y = center + Math.sin(angle) * radius;
+    points.push(`${x},${y}`);
+  }
+
+  return points.join(' ');
+}
 
 const shapes: { type: ShapeType; label: string; preview: React.ReactNode }[] = [
   {
@@ -39,14 +57,58 @@ const shapes: { type: ShapeType; label: string; preview: React.ReactNode }[] = [
     preview: (<BiRightArrowAlt size={32} color="#7c3aed" />),
   },
   {
+    type: 'thickArrow',
+    label: 'Arrow 2',
+    preview: (
+      <TbArrowBigRight size={32} color="#7c3aed" />
+    ),
+  },
+  {
+    type: 'semicircle',
+    label: 'Semicircle',
+    preview: (
+      <BiCircleHalf size={32} color="#7c3aed" style={{ transform: 'rotate(90deg)' }} />
+    ),
+  },
+  {
     type: 'triangle',
     label: 'Triangle',
     preview: (<TbTriangle size={32} color="#7c3aed" />),
   },
   {
+    type: 'trapezoid',
+    label: 'Trapezoid',
+    preview: (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <polygon
+          points="9,7 23,7 28,25 4,25"
+          fill="none"
+          stroke={previewColor}
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
+  {
     type: 'star',
     label: 'Star',
     preview: (<BiStar size={32} color="#7c3aed" />),
+  },
+  {
+    type: 'dodecagonStar',
+    label: 'Star 12',
+    preview: (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <polygon
+          points={previewStarPoints(12, 13, 8)}
+          fill="none"
+          stroke={previewColor}
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
   },
   {
     type: 'heart',

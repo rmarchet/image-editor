@@ -88,6 +88,18 @@ function serializeShape(el: ShapeElement): string {
       break;
     }
 
+    case 'thickArrow':
+      inner = `<polygon points="${thickArrowPoints(shapeWidth, shapeHeight)}" ${fill} ${stroke}/>`;
+      break;
+
+    case 'semicircle':
+      inner = `<path d="${semicirclePath(shapeWidth, shapeHeight)}" ${fill} ${stroke}/>`;
+      break;
+
+    case 'trapezoid':
+      inner = `<polygon points="${trapezoidPoints(shapeWidth, shapeHeight)}" ${fill} ${stroke}/>`;
+      break;
+
     case 'triangle':
       inner = `<polygon points="${polygonPoints(3, shapeWidth, shapeHeight)}" ${fill} ${stroke}/>`;
       break;
@@ -101,11 +113,41 @@ function serializeShape(el: ShapeElement): string {
       break;
 
     case 'star':
-      inner = `<polygon points="${starPoints(shapeWidth, shapeHeight)}" ${fill} ${stroke}/>`;
+      inner = `<polygon points="${starPoints(5, shapeWidth, shapeHeight, 0.45)}" ${fill} ${stroke}/>`;
+      break;
+
+    case 'dodecagonStar':
+      inner = `<polygon points="${starPoints(12, shapeWidth, shapeHeight, 0.62)}" ${fill} ${stroke}/>`;
       break;
 
     case 'heart':
       inner = `<path d="${heartPath(shapeWidth, shapeHeight)}" ${fill} ${stroke}/>`;
+      break;
+
+    case 'diamond':
+      inner = `<polygon points="${diamondPoints(shapeWidth, shapeHeight)}" ${fill} ${stroke}/>`;
+      break;
+
+    case 'roundedRectangle': {
+      const radius = Math.min(shapeWidth, shapeHeight) * 0.15;
+      inner = `<rect x="0" y="0" width="${shapeWidth}" height="${shapeHeight}" rx="${radius}" ry="${radius}" ${fill} ${stroke}/>`;
+      break;
+    }
+
+    case 'plus':
+      inner = `<polygon points="${plusPoints(shapeWidth, shapeHeight)}" ${fill} ${stroke}/>`;
+      break;
+
+    case 'cloud':
+      inner = `<path d="${cloudPath(shapeWidth, shapeHeight)}" ${fill} ${stroke}/>`;
+      break;
+
+    case 'crescent':
+      inner = `<path d="${crescentPath(shapeWidth, shapeHeight)}" ${fill} ${stroke}/>`;
+      break;
+
+    case 'ring':
+      inner = `<path d="${ringPath(shapeWidth, shapeHeight)}" ${fill} ${stroke} fill-rule="evenodd"/>`;
       break;
 
     default:
@@ -129,24 +171,178 @@ function polygonPoints(sides: number, width: number, height: number): string {
   return pts.join(' ');
 }
 
-function starPoints(width: number, height: number): string {
-  const points = 5;
+function starPoints(pointCount: number, width: number, height: number, innerScale: number): string {
   const cx = width / 2;
   const cy = height / 2;
   const outerRx = width / 2;
   const outerRy = height / 2;
-  const innerRx = outerRx * 0.45;
-  const innerRy = outerRy * 0.45;
+  const innerRx = outerRx * innerScale;
+  const innerRy = outerRy * innerScale;
   const startAngle = -Math.PI / 2;
   const pts: string[] = [];
-  for (let i = 0; i < points * 2; i++) {
+  for (let i = 0; i < pointCount * 2; i++) {
     const isOuter = i % 2 === 0;
     const rx = isOuter ? outerRx : innerRx;
     const ry = isOuter ? outerRy : innerRy;
-    const angle = startAngle + (i * Math.PI) / points;
+    const angle = startAngle + (i * Math.PI) / pointCount;
     pts.push(`${cx + Math.cos(angle) * rx},${cy + Math.sin(angle) * ry}`);
   }
   return pts.join(' ');
+}
+
+function diamondPoints(width: number, height: number): string {
+  const cx = width / 2;
+  const cy = height / 2;
+  return `${cx},0 ${width},${cy} ${cx},${height} 0,${cy}`;
+}
+
+function thickArrowPoints(width: number, height: number): string {
+  const shaftHeight = height * 0.42;
+  const shaftTop = (height - shaftHeight) / 2;
+  const shaftBottom = shaftTop + shaftHeight;
+  const headWidth = width * 0.34;
+  const neckX = width - headWidth;
+  const centerY = height / 2;
+
+  return [
+    `0,${shaftTop}`,
+    `${neckX},${shaftTop}`,
+    `${neckX},0`,
+    `${width},${centerY}`,
+    `${neckX},${height}`,
+    `${neckX},${shaftBottom}`,
+    `0,${shaftBottom}`,
+  ].join(' ');
+}
+
+function semicirclePath(width: number, height: number): string {
+  const cx = width / 2;
+  const cy = height;
+  const rx = width / 2;
+  const ry = height;
+  const pointCount = 48;
+  const commands = [`M 0 ${height}`];
+
+  for (let index = 0; index <= pointCount; index++) {
+    const angle = Math.PI - (index * Math.PI) / pointCount;
+    const x = cx + Math.cos(angle) * rx;
+    const y = cy - Math.sin(angle) * ry;
+    commands.push(`L ${x} ${y}`);
+  }
+
+  commands.push(`L ${width} ${height}`);
+  commands.push('Z');
+  return commands.join(' ');
+}
+
+function trapezoidPoints(width: number, height: number): string {
+  const topInset = width * 0.18;
+  return `${topInset},0 ${width - topInset},0 ${width},${height} 0,${height}`;
+}
+
+function plusPoints(width: number, height: number): string {
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const baseSize = Math.min(width, height);
+  const armWidth = baseSize * 0.3;
+  const armLength = baseSize * 0.65;
+
+  return [
+    `${centerX - armWidth / 2},${centerY - armLength / 2}`,
+    `${centerX + armWidth / 2},${centerY - armLength / 2}`,
+    `${centerX + armWidth / 2},${centerY - armWidth / 2}`,
+    `${centerX + armLength / 2},${centerY - armWidth / 2}`,
+    `${centerX + armLength / 2},${centerY + armWidth / 2}`,
+    `${centerX + armWidth / 2},${centerY + armWidth / 2}`,
+    `${centerX + armWidth / 2},${centerY + armLength / 2}`,
+    `${centerX - armWidth / 2},${centerY + armLength / 2}`,
+    `${centerX - armWidth / 2},${centerY + armWidth / 2}`,
+    `${centerX - armLength / 2},${centerY + armWidth / 2}`,
+    `${centerX - armLength / 2},${centerY - armWidth / 2}`,
+    `${centerX - armWidth / 2},${centerY - armWidth / 2}`,
+  ].join(' ');
+}
+
+function cloudPath(width: number, height: number): string {
+  const baseY = height * 0.6;
+  const left = { cx: width * 0.18, cy: baseY - 5, r: width * 0.18 };
+  const center = { cx: width * 0.45, cy: height * 0.34, r: width * 0.23 };
+  const right = { cx: width * 0.75, cy: baseY - 5, r: width * 0.25 };
+  const steps = 400;
+  const commands = [`M 0 ${baseY}`];
+
+  for (let index = 0; index <= steps; index++) {
+    const x = (index / steps) * width;
+    let minY = baseY;
+
+    for (const point of [left, center, right]) {
+      const dx = x - point.cx;
+      if (Math.abs(dx) < point.r) {
+        const arcY = point.cy - Math.sqrt(point.r * point.r - dx * dx);
+        minY = Math.min(minY, arcY);
+      }
+    }
+
+    commands.push(`L ${x} ${minY}`);
+  }
+
+  commands.push(`L ${width} ${baseY}`);
+  commands.push(`L 0 ${baseY}`);
+  commands.push('Z');
+  return commands.join(' ');
+}
+
+function crescentPath(width: number, height: number): string {
+  const radius = Math.min(width, height) / 2;
+  const cx = width / 2;
+  const cy = height / 2;
+  const distance = radius * 0.55;
+  const pointCount = 100;
+  const h = Math.sqrt(radius * radius - (distance * distance) / 4);
+  const aTop = Math.atan2(-h, distance / 2);
+  const aBottom = Math.atan2(h, distance / 2);
+  const bBottom = Math.atan2(h, -distance / 2);
+  const bTop = Math.atan2(-h, -distance / 2);
+  const sweepA = 2 * Math.PI - (aBottom - aTop);
+  const target = bTop + 2 * Math.PI;
+  const sweepB = target - bBottom;
+
+  const commands = [`M ${cx + Math.cos(aTop) * radius} ${cy + Math.sin(aTop) * radius}`];
+
+  for (let index = 1; index <= pointCount; index++) {
+    const angle = aTop - (sweepA * index) / pointCount;
+    commands.push(`L ${cx + Math.cos(angle) * radius} ${cy + Math.sin(angle) * radius}`);
+  }
+
+  for (let index = 1; index <= pointCount; index++) {
+    const angle = bBottom + (sweepB * index) / pointCount;
+    commands.push(
+      `L ${cx + distance + Math.cos(angle) * radius} ${cy + Math.sin(angle) * radius}`
+    );
+  }
+
+  commands.push('Z');
+  return commands.join(' ');
+}
+
+function ringPath(width: number, height: number): string {
+  const cx = width / 2;
+  const cy = height / 2;
+  const outerRadius = width / 2;
+  const innerRadius = outerRadius * 0.6;
+  return [
+    circlePath(cx, cy, outerRadius),
+    circlePath(cx, cy, innerRadius),
+  ].join(' ');
+}
+
+function circlePath(cx: number, cy: number, radius: number): string {
+  return [
+    `M ${cx + radius} ${cy}`,
+    `A ${radius} ${radius} 0 1 0 ${cx - radius} ${cy}`,
+    `A ${radius} ${radius} 0 1 0 ${cx + radius} ${cy}`,
+    'Z',
+  ].join(' ');
 }
 
 function heartPath(width: number, height: number): string {

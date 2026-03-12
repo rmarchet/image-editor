@@ -62,21 +62,20 @@ export class ShapeElement extends BaseElement {
     this.graphics.closePath();
   }
 
-  private drawStar(width: number, height: number) {
-    const points = 5;
+  private drawPointStar(pointCount: number, width: number, height: number, innerScale: number) {
     const centerX = width / 2;
     const centerY = height / 2;
     const outerRadiusX = width / 2;
     const outerRadiusY = height / 2;
-    const innerRadiusX = outerRadiusX * 0.45;
-    const innerRadiusY = outerRadiusY * 0.45;
+    const innerRadiusX = outerRadiusX * innerScale;
+    const innerRadiusY = outerRadiusY * innerScale;
     const startAngle = -Math.PI / 2;
 
-    for (let index = 0; index < points * 2; index++) {
+    for (let index = 0; index < pointCount * 2; index++) {
       const isOuterPoint = index % 2 === 0;
       const radiusX = isOuterPoint ? outerRadiusX : innerRadiusX;
       const radiusY = isOuterPoint ? outerRadiusY : innerRadiusY;
-      const angle = startAngle + (index * Math.PI) / points;
+      const angle = startAngle + (index * Math.PI) / pointCount;
       const x = centerX + Math.cos(angle) * radiusX;
       const y = centerY + Math.sin(angle) * radiusY;
 
@@ -88,6 +87,10 @@ export class ShapeElement extends BaseElement {
     }
 
     this.graphics.closePath();
+  }
+
+  private drawStar(width: number, height: number) {
+    this.drawPointStar(5, width, height, 0.45);
   }
 
   private drawHeart(width: number, height: number) {
@@ -181,6 +184,54 @@ export class ShapeElement extends BaseElement {
     this.graphics.lineTo(width, centerY);
     this.graphics.lineTo(centerX, height);
     this.graphics.lineTo(0, centerY);
+    this.graphics.closePath();
+  }
+
+  private drawThickArrow(width: number, height: number) {
+    const shaftHeight = height * 0.42;
+    const shaftTop = (height - shaftHeight) / 2;
+    const shaftBottom = shaftTop + shaftHeight;
+    const headWidth = width * 0.34;
+    const neckX = width - headWidth;
+    const centerY = height / 2;
+
+    this.graphics.moveTo(0, shaftTop);
+    this.graphics.lineTo(neckX, shaftTop);
+    this.graphics.lineTo(neckX, 0);
+    this.graphics.lineTo(width, centerY);
+    this.graphics.lineTo(neckX, height);
+    this.graphics.lineTo(neckX, shaftBottom);
+    this.graphics.lineTo(0, shaftBottom);
+    this.graphics.closePath();
+  }
+
+  private drawSemicircle(width: number, height: number) {
+    const centerX = width / 2;
+    const centerY = height;
+    const radiusX = width / 2;
+    const radiusY = height;
+    const pointCount = 48;
+
+    this.graphics.moveTo(0, height);
+
+    for (let index = 0; index <= pointCount; index++) {
+      const angle = Math.PI - (index * Math.PI) / pointCount;
+      const x = centerX + Math.cos(angle) * radiusX;
+      const y = centerY - Math.sin(angle) * radiusY;
+      this.graphics.lineTo(x, y);
+    }
+
+    this.graphics.lineTo(width, height);
+    this.graphics.closePath();
+  }
+
+  private drawTrapezoid(width: number, height: number) {
+    const topInset = width * 0.18;
+
+    this.graphics.moveTo(topInset, 0);
+    this.graphics.lineTo(width - topInset, 0);
+    this.graphics.lineTo(width, height);
+    this.graphics.lineTo(0, height);
     this.graphics.closePath();
   }
 
@@ -314,6 +365,21 @@ export class ShapeElement extends BaseElement {
         g.fill(strokeColor);
         break;
       }
+      case 'thickArrow':
+        this.drawThickArrow(shapeWidth, shapeHeight);
+        g.fill(fillColor);
+        g.stroke({ width: strokeWidth, color: strokeColor });
+        break;
+      case 'semicircle':
+        this.drawSemicircle(shapeWidth, shapeHeight);
+        g.fill(fillColor);
+        g.stroke({ width: strokeWidth, color: strokeColor });
+        break;
+      case 'trapezoid':
+        this.drawTrapezoid(shapeWidth, shapeHeight);
+        g.fill(fillColor);
+        g.stroke({ width: strokeWidth, color: strokeColor });
+        break;
       case 'triangle':
         this.drawRegularPolygon(3, shapeWidth, shapeHeight);
         g.fill(fillColor);
@@ -331,6 +397,11 @@ export class ShapeElement extends BaseElement {
         break;
       case 'star':
         this.drawStar(shapeWidth, shapeHeight);
+        g.fill(fillColor);
+        g.stroke({ width: strokeWidth, color: strokeColor });
+        break;
+      case 'dodecagonStar':
+        this.drawPointStar(12, shapeWidth, shapeHeight, 0.62);
         g.fill(fillColor);
         g.stroke({ width: strokeWidth, color: strokeColor });
         break;
