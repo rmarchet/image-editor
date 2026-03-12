@@ -111,7 +111,7 @@ export class SelectionManager {
     const frame = this.getOrientedFrame(el, zoom);
     if (!frame) return null;
 
-    const handleSize = HANDLE_SIZE / zoom;
+    const handleSize = HANDLE_SIZE;
     const corners = [
       { name: 'nw', ...frame.corners.nw },
       { name: 'ne', ...frame.corners.ne },
@@ -155,8 +155,8 @@ export class SelectionManager {
         const frame = this.getOrientedFrame(el, zoom);
         if (!frame) continue;
 
-        const lineWidth = 1.5 / zoom;
-        const handleSize = HANDLE_SIZE / zoom;
+        const lineWidth = 1.5;
+        const handleSize = HANDLE_SIZE;
 
         this.overlay.moveTo(frame.corners.nw.x, frame.corners.nw.y);
         this.overlay.lineTo(frame.corners.ne.x, frame.corners.ne.y);
@@ -172,15 +172,24 @@ export class SelectionManager {
           frame.corners.sw,
         ];
 
+        const topEdgeX = frame.corners.ne.x - frame.corners.nw.x;
+        const topEdgeY = frame.corners.ne.y - frame.corners.nw.y;
+        const topEdgeLength = Math.hypot(topEdgeX, topEdgeY) || 1;
+        const axisX = {
+          x: topEdgeX / topEdgeLength,
+          y: topEdgeY / topEdgeLength,
+        };
+
+        const leftEdgeX = frame.corners.sw.x - frame.corners.nw.x;
+        const leftEdgeY = frame.corners.sw.y - frame.corners.nw.y;
+        const leftEdgeLength = Math.hypot(leftEdgeX, leftEdgeY) || 1;
+        const axisY = {
+          x: leftEdgeX / leftEdgeLength,
+          y: leftEdgeY / leftEdgeLength,
+        };
+
         for (const c of corners) {
-          this.overlay.rect(
-            c.x - handleSize / 2,
-            c.y - handleSize / 2,
-            handleSize,
-            handleSize
-          );
-          this.overlay.fill(0xffffff);
-          this.overlay.stroke({ width: lineWidth, color: HANDLE_COLOR });
+          this.drawOrientedHandle(c, axisX, axisY, handleSize, lineWidth);
         }
 
         if (this.selectedElements.length === 1) {
@@ -206,6 +215,41 @@ export class SelectionManager {
 
   destroy() {
     this.overlay.destroy();
+  }
+
+  private drawOrientedHandle(
+    center: { x: number; y: number },
+    axisX: { x: number; y: number },
+    axisY: { x: number; y: number },
+    size: number,
+    lineWidth: number
+  ) {
+    const half = size / 2;
+
+    const p1 = {
+      x: center.x - axisX.x * half - axisY.x * half,
+      y: center.y - axisX.y * half - axisY.y * half,
+    };
+    const p2 = {
+      x: center.x + axisX.x * half - axisY.x * half,
+      y: center.y + axisX.y * half - axisY.y * half,
+    };
+    const p3 = {
+      x: center.x + axisX.x * half + axisY.x * half,
+      y: center.y + axisX.y * half + axisY.y * half,
+    };
+    const p4 = {
+      x: center.x - axisX.x * half + axisY.x * half,
+      y: center.y - axisX.y * half + axisY.y * half,
+    };
+
+    this.overlay.moveTo(p1.x, p1.y);
+    this.overlay.lineTo(p2.x, p2.y);
+    this.overlay.lineTo(p3.x, p3.y);
+    this.overlay.lineTo(p4.x, p4.y);
+    this.overlay.lineTo(p1.x, p1.y);
+    this.overlay.fill(0xffffff);
+    this.overlay.stroke({ width: lineWidth, color: HANDLE_COLOR });
   }
 
   private getOrientedFrame(el: BaseElement, zoom: number): OrientedFrame | null {
@@ -251,8 +295,8 @@ export class SelectionManager {
     }
 
     const rotationHandle = {
-      x: topMid.x + normalX * (ROTATION_HANDLE_OFFSET / zoom),
-      y: topMid.y + normalY * (ROTATION_HANDLE_OFFSET / zoom),
+      x: topMid.x + normalX * ROTATION_HANDLE_OFFSET,
+      y: topMid.y + normalY * ROTATION_HANDLE_OFFSET,
     };
 
     return {
