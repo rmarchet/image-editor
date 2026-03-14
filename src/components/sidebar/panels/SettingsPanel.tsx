@@ -1,6 +1,9 @@
 import { Box, VStack, Text, Flex } from '@chakra-ui/react';
+import { useRef, type CSSProperties } from 'react';
 import { useEditorStore } from '../../../stores/editorStore';
 import { EditorEngine } from '../../../engine/core/EditorEngine';
+import { useHistoryStore } from '../../../stores/historyStore';
+import { UpdateCanvasSizeCommand } from '../../../engine/history/commands';
 
 const presetSizes = [
   { label: 'HD (1280 × 720)', w: 1280, h: 720 },
@@ -11,7 +14,7 @@ const presetSizes = [
   { label: 'Presentation (1920 × 1080)', w: 1920, h: 1080 },
 ];
 
-const inputStyle: React.CSSProperties = {
+const inputStyle: CSSProperties = {
   width: '100%',
   padding: '6px 10px',
   background: '#2a2a3e',
@@ -24,6 +27,24 @@ const inputStyle: React.CSSProperties = {
 export const SettingsPanel = () => {
   const canvasWidth = useEditorStore((s) => s.canvasWidth);
   const canvasHeight = useEditorStore((s) => s.canvasHeight);
+  const sizeSnapshotRef = useRef<{ width: number; height: number } | null>(null);
+
+  const handleFocus = () => {
+    const { canvasWidth: w, canvasHeight: h } = useEditorStore.getState();
+    sizeSnapshotRef.current = { width: w, height: h };
+  };
+
+  const handleBlur = () => {
+    const snap = sizeSnapshotRef.current;
+    sizeSnapshotRef.current = null;
+    if (!snap) return;
+    const engine = EditorEngine.getInstance();
+    if (!engine.initialized) return;
+    const { canvasWidth: w, canvasHeight: h } = useEditorStore.getState();
+    if (w !== snap.width || h !== snap.height) {
+      useHistoryStore.getState().record(new UpdateCanvasSizeCommand(snap, { width: w, height: h }));
+    }
+  };
 
   const handleSizeChange = (width: number, height: number) => {
     const engine = EditorEngine.getInstance();
@@ -46,6 +67,8 @@ export const SettingsPanel = () => {
               type="number"
               value={canvasWidth}
               min={1}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
               onChange={(e) => {
                 const w = Number(e.target.value);
                 if (w > 0) handleSizeChange(w, canvasHeight);
@@ -61,6 +84,8 @@ export const SettingsPanel = () => {
               type="number"
               value={canvasHeight}
               min={1}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
               onChange={(e) => {
                 const h = Number(e.target.value);
                 if (h > 0) handleSizeChange(canvasWidth, h);
@@ -94,7 +119,13 @@ export const SettingsPanel = () => {
               cursor="pointer"
               transition="all 0.1s"
               _hover={{ bg: '#3a3a5e' }}
-              onClick={() => handleSizeChange(preset.w, preset.h)}
+              onClick={() => {
+                const before = { width: useEditorStore.getState().canvasWidth, height: useEditorStore.getState().canvasHeight };
+                const after = { width: preset.w, height: preset.h };
+                if (before.width !== after.width || before.height !== after.height) {
+                  useHistoryStore.getState().push(new UpdateCanvasSizeCommand(before, after));
+                }
+              }}
             >
               {preset.label}
             </Box>

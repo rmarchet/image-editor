@@ -5,6 +5,8 @@ import { TbTriangle, TbArrowBigRight, TbPentagon, TbHexagon, TbCloud } from 'rea
 import { PiDiamond, PiRadioButton } from 'react-icons/pi';
 import { ShapeElement } from '../../../engine/elements/ShapeElement';
 import { useEditorStore } from '../../../stores/editorStore';
+import { useHistoryStore } from '../../../stores/historyStore';
+import { AddElementCommand } from '../../../engine/history/commands';
 import type { ShapeType } from '../../../types';
 
 const previewColor = '#7c3aed';
@@ -156,7 +158,7 @@ export const ShapesPanel = () => {
     const element = new ShapeElement({ shapeType: type });
     element.x = canvasWidth / 2;
     element.y = canvasHeight / 2;
-    engine.addElement(element);
+    useHistoryStore.getState().push(new AddElementCommand(element));
   };
 
   return (

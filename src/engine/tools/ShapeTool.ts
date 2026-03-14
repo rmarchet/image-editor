@@ -2,6 +2,8 @@ import type { BaseTool } from './BaseTool';
 import type { EditorEngine } from '../core/EditorEngine';
 import { ShapeElement } from '../elements/ShapeElement';
 import { useToolStore } from '../../stores/toolStore';
+import { AddElementCommand } from '../history/commands';
+import { useHistoryStore } from '../../stores/historyStore';
 
 export class ShapeTool implements BaseTool {
   readonly name = 'shape';
@@ -65,8 +67,10 @@ export class ShapeTool implements BaseTool {
         this.activeElement.width = 200;
         this.activeElement.height = 150;
       }
-      this.engine.selection.select(this.activeElement);
+      const element = this.activeElement;
+      this.engine.selection.select(element);
       this.engine.syncElementsToStore();
+      useHistoryStore.getState().record(new AddElementCommand(element));
     }
 
     this.startPoint = null;

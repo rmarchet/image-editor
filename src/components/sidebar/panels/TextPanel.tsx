@@ -3,6 +3,8 @@ import { BiText } from 'react-icons/bi';
 import { EditorEngine } from '../../../engine/core/EditorEngine';
 import { TextElement } from '../../../engine/elements/TextElement';
 import { useEditorStore } from '../../../stores/editorStore';
+import { useHistoryStore } from '../../../stores/historyStore';
+import { AddElementCommand } from '../../../engine/history/commands';
 
 const presets = [
   { label: 'Add Heading', placeholder: 'Heading', fontSize: 48, fontWeight: 'bold' as const },
@@ -24,7 +26,7 @@ export const TextPanel = () => {
 
     element.x = canvasWidth / 2;
     element.y = canvasHeight / 2;
-    engine.addElement(element);
+    useHistoryStore.getState().push(new AddElementCommand(element));
   };
 
   return (

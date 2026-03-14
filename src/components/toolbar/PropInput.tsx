@@ -4,9 +4,11 @@ interface PropInputProps {
   label: string;
   value: number;
   onChange: (v: number) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
-export const PropInput = ({ label, value, onChange }: PropInputProps) => (
+export const PropInput = ({ label, value, onChange, onFocus, onBlur }: PropInputProps) => (
   <Flex alignItems="center" gap={1}>
     <Text fontSize="10px" color="gray.400" fontWeight="600" w="12px">
       {label}
@@ -15,6 +17,8 @@ export const PropInput = ({ label, value, onChange }: PropInputProps) => (
       type="number"
       value={value}
       onChange={(e) => onChange(Number(e.target.value))}
+      onFocus={onFocus}
+      onBlur={onBlur}
       style={{
         width: 52,
         padding: '2px 6px',

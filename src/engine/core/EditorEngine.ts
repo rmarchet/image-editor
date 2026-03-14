@@ -144,7 +144,34 @@ export class EditorEngine {
     this.syncElementsToStore();
   }
 
-  duplicateSelected(): void {
+  softRemoveElement(id: string): BaseElement | undefined {
+    const idx = this.elements.findIndex((el) => el.id === id);
+    if (idx === -1) return undefined;
+
+    const element = this.elements[idx];
+    this.elements.splice(idx, 1);
+    this.elementsLayer.removeChild(element.container);
+
+    this.selection.removeFromSelection([id]);
+    this.selection.setElements(this.elements);
+    this.syncElementsToStore();
+    return element;
+  }
+
+  reattachElement(element: BaseElement, index: number): void {
+    const clampedIndex = Math.max(0, Math.min(index, this.elements.length));
+    this.elements.splice(clampedIndex, 0, element);
+
+    this.elementsLayer.removeChildren();
+    for (const el of this.elements) {
+      this.elementsLayer.addChild(el.container);
+    }
+
+    this.selection.setElements(this.elements);
+    this.syncElementsToStore();
+  }
+
+  duplicateSelected(): BaseElement[] {
     const selected = this.selection.getSelected();
     const offset = 20;
     const added: BaseElement[] = [];
@@ -156,11 +183,12 @@ export class EditorEngine {
       this.addElement(copy);
       added.push(copy);
     }
-    if (added.length === 0) return;
+    if (added.length === 0) return [];
     this.selection.select(added[0], false);
     for (let i = 1; i < added.length; i++) {
       this.selection.select(added[i], true);
     }
+    return added;
   }
 
   getElement(id: string): BaseElement | undefined {

@@ -2,7 +2,8 @@ import { Box, SimpleGrid, Text, VStack } from '@chakra-ui/react';
 import { BiBlock, BiAdjust, BiBrightnessHalf } from 'react-icons/bi';
 import { EditorEngine } from '../../../engine/core/EditorEngine';
 import { useElementStore } from '../../../stores/elementStore';
-import { ColorMatrixFilter, BlurFilter } from 'pixi.js';
+import { useHistoryStore } from '../../../stores/historyStore';
+import { UpdateFilterCommand, BatchCommand } from '../../../engine/history/commands';
 
 interface FilterPreset {
   id: string;
@@ -16,108 +17,47 @@ const getFilters = (): FilterPreset[] => [
     id: 'none',
     name: 'None',
     icon: <BiBlock size={12} />,
-    apply: () => applyFilter(null, null),
+    apply: () => applyFilter(null),
   },
-  {
-    id: 'grayscale',
-    name: 'Grayscale',
-    apply: () => {
-      const f = new ColorMatrixFilter();
-      f.grayscale(0.5, false);
-      applyFilter(f, 'grayscale');
-    },
-  },
-  {
-    id: 'sepia',
-    name: 'Sepia',
-    apply: () => {
-      const f = new ColorMatrixFilter();
-      f.sepia(false);
-      applyFilter(f, 'sepia');
-    },
-  },
+  { id: 'grayscale', name: 'Grayscale', apply: () => applyFilter('grayscale') },
+  { id: 'sepia', name: 'Sepia', apply: () => applyFilter('sepia') },
   {
     id: 'brightness',
     name: 'Brighten',
     icon: <BiBrightnessHalf size={12} />,
-    apply: () => {
-      const f = new ColorMatrixFilter();
-      f.brightness(1.4, false);
-      applyFilter(f, 'brightness');
-    },
+    apply: () => applyFilter('brightness'),
   },
   {
     id: 'contrast',
     name: 'Contrast',
     icon: <BiAdjust size={12} />,
-    apply: () => {
-      const f = new ColorMatrixFilter();
-      f.contrast(0.4, false);
-      applyFilter(f, 'contrast');
-    },
+    apply: () => applyFilter('contrast'),
   },
-  {
-    id: 'saturate',
-    name: 'Saturate',
-    apply: () => {
-      const f = new ColorMatrixFilter();
-      f.saturate(1.5, false);
-      applyFilter(f, 'saturate');
-    },
-  },
-  {
-    id: 'desaturate',
-    name: 'Desaturate',
-    apply: () => {
-      const f = new ColorMatrixFilter();
-      f.desaturate();
-      applyFilter(f, 'desaturate');
-    },
-  },
-  {
-    id: 'invert',
-    name: 'Invert',
-    apply: () => {
-      const f = new ColorMatrixFilter();
-      f.negative(false);
-      applyFilter(f, 'invert');
-    },
-  },
-  {
-    id: 'blur',
-    name: 'Blur',
-    apply: () => {
-      const f = new BlurFilter({ strength: 4 });
-      applyFilter(f, 'blur');
-    },
-  },
-  {
-    id: 'hueRotate',
-    name: 'Hue Shift',
-    apply: () => {
-      const f = new ColorMatrixFilter();
-      f.hue(90, false);
-      applyFilter(f, 'hueRotate');
-    },
-  },
+  { id: 'saturate', name: 'Saturate', apply: () => applyFilter('saturate') },
+  { id: 'desaturate', name: 'Desaturate', apply: () => applyFilter('desaturate') },
+  { id: 'invert', name: 'Invert', apply: () => applyFilter('invert') },
+  { id: 'blur', name: 'Blur', apply: () => applyFilter('blur') },
+  { id: 'hueRotate', name: 'Hue Shift', apply: () => applyFilter('hueRotate') },
 ];
 
-function applyFilter(filter: ColorMatrixFilter | BlurFilter | null, filterId: string | null) {
+function applyFilter(filterId: string | null) {
   const engine = EditorEngine.getInstance();
   if (!engine.initialized) return;
 
   const selectedIds = useElementStore.getState().selectedIds;
   if (selectedIds.length === 0) return;
 
-  for (const id of selectedIds) {
-    const el = engine.getElement(id);
-    if (el) {
-      el.container.filters = filter ? [filter] : [];
-      el.appliedFilterId = filterId;
-    }
-  }
+  const commands = selectedIds
+    .map((id) => {
+      const el = engine.getElement(id);
+      if (!el) return null;
+      return new UpdateFilterCommand(id, el.appliedFilterId, filterId);
+    })
+    .filter((c): c is UpdateFilterCommand => c !== null);
 
-  engine.syncElementsToStore();
+  if (commands.length === 0) return;
+  const cmd = commands.length === 1 ? commands[0] : new BatchCommand(commands, 'Apply filter');
+  useHistoryStore.getState().push(cmd);
 }
 
 export const FiltersPanel = () => {

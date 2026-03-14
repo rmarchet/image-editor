@@ -4,7 +4,7 @@ import { BiShow, BiHide, BiSolidLockAlt, BiLockOpenAlt, BiTrash,
 } from 'react-icons/bi';
 import { useElementStore } from '../../../stores/elementStore';
 import { EditorEngine } from '../../../engine/core/EditorEngine';
-import { ReorderCommand } from '../../../engine/history/commands';
+import { ReorderCommand, RemoveElementCommand } from '../../../engine/history/commands';
 import { useHistoryStore } from '../../../stores/historyStore';
 
 export const LayersPanel = () => {
@@ -40,7 +40,9 @@ export const LayersPanel = () => {
   const handleDelete = (id: string) => {
     const engine = EditorEngine.getInstance();
     if (!engine.initialized) return;
-    engine.removeElement(id);
+    const el = engine.getElement(id);
+    if (!el) return;
+    useHistoryStore.getState().push(new RemoveElementCommand(el));
   };
 
   const handleMoveLayer = (id: string, direction: 'up' | 'down') => {

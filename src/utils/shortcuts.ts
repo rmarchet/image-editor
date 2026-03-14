@@ -4,6 +4,7 @@ import { useElementStore } from '../stores/elementStore';
 import { EditorEngine } from '../engine/core/EditorEngine';
 import { useEditorStore } from '../stores/editorStore';
 import { useTextEditStore } from '../stores/textEditStore';
+import { RemoveElementCommand, BatchCommand, MoveCommand } from '../engine/history/commands';
 import type { ToolType } from '../types';
 
 const SHORTCUT_MAP: Record<string, () => void> = {
@@ -48,8 +49,16 @@ function deleteSelected() {
   const engine = EditorEngine.getInstance();
   if (!engine.initialized) return;
   const selectedIds = useElementStore.getState().selectedIds;
-  for (const id of selectedIds) {
-    engine.removeElement(id);
+  const validElements = selectedIds
+    .map((id) => engine.getElement(id))
+    .filter((el): el is NonNullable<typeof el> => el !== undefined);
+  if (validElements.length === 0) return;
+
+  if (validElements.length === 1) {
+    useHistoryStore.getState().push(new RemoveElementCommand(validElements[0]));
+  } else {
+    const commands = validElements.map((el) => new RemoveElementCommand(el));
+    useHistoryStore.getState().push(new BatchCommand(commands, 'Delete elements'));
   }
 }
 
@@ -107,26 +116,72 @@ export function setupKeyboardShortcuts(): () => void {
       return;
     }
 
+    if (handleArrowNudge(e)) {
+      return;
+    }
+
+    commitNudgeBatch();
+
     const action = SHORTCUT_MAP[key];
     if (action) {
       e.preventDefault();
       action();
     }
+  };
 
-    handleArrowNudge(e);
+  const pointerHandler = () => {
+    commitNudgeBatch();
   };
 
   window.addEventListener('keydown', handler);
-  return () => window.removeEventListener('keydown', handler);
+  window.addEventListener('pointerdown', pointerHandler);
+  return () => {
+    window.removeEventListener('keydown', handler);
+    window.removeEventListener('pointerdown', pointerHandler);
+    commitNudgeBatch();
+  };
 }
 
-function handleArrowNudge(e: KeyboardEvent) {
+// Nudge batching state
+let nudgeTimer: ReturnType<typeof setTimeout> | null = null;
+let nudgeStartState: Map<string, { x: number; y: number }> | null = null;
+
+function commitNudgeBatch() {
+  if (nudgeTimer !== null) {
+    clearTimeout(nudgeTimer);
+    nudgeTimer = null;
+  }
+
+  const startState = nudgeStartState;
+  nudgeStartState = null;
+  if (!startState) return;
+
   const engine = EditorEngine.getInstance();
   if (!engine.initialized) return;
 
+  const commands: MoveCommand[] = [];
+  for (const [id, start] of startState.entries()) {
+    const el = engine.getElement(id);
+    if (el && (start.x !== el.x || start.y !== el.y)) {
+      commands.push(new MoveCommand(id, start.x, start.y, el.x, el.y));
+    }
+  }
+
+  if (commands.length === 0) return;
+  if (commands.length === 1) {
+    useHistoryStore.getState().record(commands[0]);
+  } else {
+    useHistoryStore.getState().record(new BatchCommand(commands, 'Nudge elements'));
+  }
+}
+
+function handleArrowNudge(e: KeyboardEvent): boolean {
+  const engine = EditorEngine.getInstance();
+  if (!engine.initialized) return false;
+
   const step = e.shiftKey ? 10 : 1;
   const selected = engine.selection.getSelected();
-  if (selected.length === 0) return;
+  if (selected.length === 0) return false;
 
   let dx = 0;
   let dy = 0;
@@ -145,10 +200,15 @@ function handleArrowNudge(e: KeyboardEvent) {
       dx = step;
       break;
     default:
-      return;
+      return false;
   }
 
   e.preventDefault();
+
+  // Capture start positions on the first key press of a batch
+  if (!nudgeStartState) {
+    nudgeStartState = new Map(selected.map((el) => [el.id, { x: el.x, y: el.y }]));
+  }
 
   for (const el of selected) {
     el.x += dx;
@@ -157,4 +217,12 @@ function handleArrowNudge(e: KeyboardEvent) {
 
   engine.syncElementsToStore();
   engine.selection.drawOverlay(engine.viewport.zoom);
+
+  // Debounce history commit: wait 800 ms after last key press
+  if (nudgeTimer !== null) clearTimeout(nudgeTimer);
+  nudgeTimer = setTimeout(() => {
+    commitNudgeBatch();
+  }, 800);
+
+  return true;
 }

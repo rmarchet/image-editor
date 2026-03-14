@@ -2,7 +2,9 @@ import type { Command } from './Command';
 import { EditorEngine } from '../core/EditorEngine';
 import type { BaseElement } from '../elements/BaseElement';
 import { TextElement, type TextConfig } from '../elements/TextElement';
+import { ShapeElement, type ShapeConfig } from '../elements/ShapeElement';
 import { DrawingElement } from '../elements/DrawingElement';
+import { FILTER_PRESETS } from '../filters/FilterManager';
 import type { DrawingStrokeData } from '../../types';
 
 function cloneStrokes(strokes: DrawingStrokeData[]): DrawingStrokeData[] {
@@ -131,7 +133,7 @@ export class AddElementCommand implements Command {
     EditorEngine.getInstance().addElement(this.element);
   }
   undo() {
-    EditorEngine.getInstance().removeElement(this.element.id);
+    EditorEngine.getInstance().softRemoveElement(this.element.id);
   }
   redo() {
     this.execute();
@@ -141,20 +143,23 @@ export class AddElementCommand implements Command {
 export class RemoveElementCommand implements Command {
   readonly label: string;
   private element: BaseElement;
-  private index: number;
+  private savedIndex = -1;
 
-  constructor(element: BaseElement, index: number) {
+  constructor(element: BaseElement) {
     this.element = element;
-    this.index = index;
     this.label = `Remove ${element.type}`;
   }
 
   execute() {
-    EditorEngine.getInstance().removeElement(this.element.id);
+    const engine = EditorEngine.getInstance();
+    const idx = engine.getElements().findIndex((el) => el.id === this.element.id);
+    if (idx === -1) return;
+    this.savedIndex = idx;
+    engine.softRemoveElement(this.element.id);
   }
   undo() {
-    const engine = EditorEngine.getInstance();
-    engine.addElement(this.element);
+    if (this.savedIndex === -1) return;
+    EditorEngine.getInstance().reattachElement(this.element, this.savedIndex);
   }
   redo() {
     this.execute();
@@ -293,4 +298,183 @@ export class UpdateDrawingStrokesCommand implements Command {
     element.updateStrokes(strokes);
     engine.syncElementsToStore();
   }
+}
+
+export class FlipCommand implements Command {
+  readonly label: string;
+  private elementId: string;
+  private axis: 'h' | 'v';
+
+  constructor(elementId: string, axis: 'h' | 'v') {
+    this.elementId = elementId;
+    this.axis = axis;
+    this.label = axis === 'h' ? 'Flip horizontal' : 'Flip vertical';
+  }
+
+  private applyFlip() {
+    const engine = EditorEngine.getInstance();
+    const el = engine.getElement(this.elementId);
+    if (!el) return;
+    if (this.axis === 'h') {
+      el.container.scale.x *= -1;
+    } else {
+      el.container.scale.y *= -1;
+    }
+    engine.syncElementsToStore();
+    engine.selection.drawOverlay(engine.viewport.zoom);
+  }
+
+  execute() { this.applyFlip(); }
+  undo() { this.applyFlip(); }
+  redo() { this.applyFlip(); }
+}
+
+export class UpdateShapeConfigCommand implements Command {
+  readonly label = 'Update shape';
+  private elementId: string;
+  private before: ShapeConfig;
+  private after: ShapeConfig;
+
+  constructor(elementId: string, before: ShapeConfig, after: ShapeConfig) {
+    this.elementId = elementId;
+    this.before = { ...before };
+    this.after = { ...after };
+  }
+
+  execute() { this.apply(this.after); }
+  undo() { this.apply(this.before); }
+  redo() { this.execute(); }
+
+  private apply(config: ShapeConfig) {
+    const engine = EditorEngine.getInstance();
+    const element = engine.getElement(this.elementId);
+    if (!(element instanceof ShapeElement)) return;
+    element.updateConfig(config);
+    engine.syncElementsToStore();
+  }
+}
+
+export class UpdateFilterCommand implements Command {
+  readonly label = 'Apply filter';
+  private elementId: string;
+  private beforeFilterId: string | null;
+  private afterFilterId: string | null;
+
+  constructor(elementId: string, beforeFilterId: string | null, afterFilterId: string | null) {
+    this.elementId = elementId;
+    this.beforeFilterId = beforeFilterId;
+    this.afterFilterId = afterFilterId;
+  }
+
+  execute() { this.apply(this.afterFilterId); }
+  undo() { this.apply(this.beforeFilterId); }
+  redo() { this.execute(); }
+
+  private apply(filterId: string | null) {
+    const engine = EditorEngine.getInstance();
+    const el = engine.getElement(this.elementId);
+    if (!el) return;
+    if (!filterId) {
+      el.container.filters = [];
+      el.appliedFilterId = null;
+    } else {
+      const preset = FILTER_PRESETS.find((p) => p.id === filterId);
+      if (preset) {
+        el.container.filters = [preset.create()];
+        el.appliedFilterId = filterId;
+      } else {
+        el.container.filters = [];
+        el.appliedFilterId = null;
+      }
+    }
+    engine.syncElementsToStore();
+  }
+}
+
+export class UpdateCanvasBackgroundCommand implements Command {
+  readonly label = 'Change background';
+  private before: string | undefined;
+  private after: string | undefined;
+
+  constructor(before: string | undefined, after: string | undefined) {
+    this.before = before;
+    this.after = after;
+  }
+
+  execute() { EditorEngine.getInstance().updateCanvasBackground(this.after); }
+  undo() { EditorEngine.getInstance().updateCanvasBackground(this.before); }
+  redo() { this.execute(); }
+}
+
+export class UpdateCanvasSizeCommand implements Command {
+  readonly label = 'Resize canvas';
+  private before: { width: number; height: number };
+  private after: { width: number; height: number };
+
+  constructor(
+    before: { width: number; height: number },
+    after: { width: number; height: number },
+  ) {
+    this.before = { ...before };
+    this.after = { ...after };
+  }
+
+  execute() { EditorEngine.getInstance().setCanvasSize(this.after.width, this.after.height); }
+  undo() { EditorEngine.getInstance().setCanvasSize(this.before.width, this.before.height); }
+  redo() { this.execute(); }
+}
+
+export class DuplicateCommand implements Command {
+  readonly label = 'Duplicate';
+  private copies: BaseElement[];
+
+  constructor(copies: BaseElement[]) {
+    this.copies = copies;
+  }
+
+  execute() {
+    const engine = EditorEngine.getInstance();
+    for (const copy of this.copies) {
+      engine.addElement(copy);
+    }
+    if (this.copies.length > 0) {
+      engine.selection.select(this.copies[0], false);
+      for (let i = 1; i < this.copies.length; i++) {
+        engine.selection.select(this.copies[i], true);
+      }
+    }
+  }
+
+  undo() {
+    const engine = EditorEngine.getInstance();
+    for (const copy of this.copies) {
+      engine.softRemoveElement(copy.id);
+    }
+  }
+
+  redo() { this.execute(); }
+}
+
+export class BatchCommand implements Command {
+  readonly label: string;
+  private commands: Command[];
+
+  constructor(commands: Command[], label = 'Batch') {
+    this.commands = commands;
+    this.label = label;
+  }
+
+  execute() {
+    for (const cmd of this.commands) {
+      cmd.execute();
+    }
+  }
+
+  undo() {
+    for (const cmd of [...this.commands].reverse()) {
+      cmd.undo();
+    }
+  }
+
+  redo() { this.execute(); }
 }

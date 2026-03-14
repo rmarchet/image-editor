@@ -6,6 +6,10 @@ export class HistoryManager {
     useHistoryStore.getState().push(command);
   }
 
+  record(command: Command) {
+    useHistoryStore.getState().record(command);
+  }
+
   undo() {
     useHistoryStore.getState().undo();
   }

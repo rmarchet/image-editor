@@ -1,5 +1,5 @@
 import { Flex, Box } from '@chakra-ui/react';
-import { useState, type ReactNode } from 'react';
+import { useState, useRef, type ReactNode } from 'react';
 import { Tooltip } from '../Tooltip';
 import { ToolButton } from './ToolButton';
 import { PropInput } from './PropInput';
@@ -30,7 +30,7 @@ import type { ShapeConfig } from '../../engine/elements/ShapeElement';
 import type { TextElement } from '../../engine/elements/TextElement';
 import type { TextConfig } from '../../engine/elements/TextElement';
 import type { DrawingElement } from '../../engine/elements/DrawingElement';
-import { UpdateDrawingStrokesCommand, UpdateTextConfigCommand } from '../../engine/history/commands';
+import { UpdateDrawingStrokesCommand, UpdateTextConfigCommand, RemoveElementCommand, BatchCommand, TransformCommand, FlipCommand, UpdateShapeConfigCommand, DuplicateCommand } from '../../engine/history/commands';
 import type { DrawingStrokeData } from '../../types';
 import { exportCanvas } from '../../utils/export';
 import { exportSvg } from '../../utils/exportSvg';
@@ -146,6 +146,37 @@ export const Toolbar = () => {
     return getElementTopLeft(element);
   })();
 
+  // Snapshot captured on PropInput focus; pushed to history on blur
+  const transformSnapshotRef = useRef<{
+    elementId: string;
+    x: number; y: number; width: number; height: number; rotation: number;
+  } | null>(null);
+
+  const captureTransformSnapshot = () => {
+    const el = getSelectedEngineElement();
+    if (!el) return;
+    transformSnapshotRef.current = {
+      elementId: el.id,
+      x: el.x, y: el.y, width: el.width, height: el.height, rotation: el.rotation,
+    };
+  };
+
+  const commitTransformSnapshot = () => {
+    const snap = transformSnapshotRef.current;
+    if (!snap) return;
+    transformSnapshotRef.current = null;
+    const el = getSelectedEngineElement();
+    if (!el || el.id !== snap.elementId) return;
+    const after = { x: el.x, y: el.y, width: el.width, height: el.height, rotation: el.rotation };
+    const changed =
+      snap.x !== after.x || snap.y !== after.y ||
+      snap.width !== after.width || snap.height !== after.height ||
+      snap.rotation !== after.rotation;
+    if (changed) {
+      useHistoryStore.getState().record(new TransformCommand(snap.elementId, snap, after));
+    }
+  };
+
   const handlePositionChange = (axis: 'x' | 'y', value: number) => {
     const element = getSelectedEngineElement();
     if (!element) return;
@@ -195,33 +226,41 @@ export const Toolbar = () => {
 
   const handleFlipH = () => {
     const engine = EditorEngine.getInstance();
-    if (!engine.initialized) return;
-    for (const id of selectedIds) {
-      const el = engine.getElement(id);
-      if (el) el.container.scale.x *= -1;
-    }
+    if (!engine.initialized || selectedIds.length === 0) return;
+    const commands = selectedIds.map((id) => new FlipCommand(id, 'h'));
+    const cmd = commands.length === 1 ? commands[0] : new BatchCommand(commands, 'Flip horizontal');
+    useHistoryStore.getState().push(cmd);
   };
 
   const handleFlipV = () => {
     const engine = EditorEngine.getInstance();
-    if (!engine.initialized) return;
-    for (const id of selectedIds) {
-      const el = engine.getElement(id);
-      if (el) el.container.scale.y *= -1;
-    }
+    if (!engine.initialized || selectedIds.length === 0) return;
+    const commands = selectedIds.map((id) => new FlipCommand(id, 'v'));
+    const cmd = commands.length === 1 ? commands[0] : new BatchCommand(commands, 'Flip vertical');
+    useHistoryStore.getState().push(cmd);
   };
 
   const handleDuplicate = () => {
     const engine = EditorEngine.getInstance();
     if (!engine.initialized) return;
-    engine.duplicateSelected();
+    const copies = engine.duplicateSelected();
+    if (copies.length > 0) {
+      useHistoryStore.getState().record(new DuplicateCommand(copies));
+    }
   };
 
   const handleDelete = () => {
     const engine = EditorEngine.getInstance();
     if (!engine.initialized) return;
-    for (const id of selectedIds) {
-      engine.removeElement(id);
+    const elements = selectedIds
+      .map((id) => engine.getElement(id))
+      .filter((el) => el !== undefined);
+    if (elements.length === 0) return;
+    if (elements.length === 1) {
+      useHistoryStore.getState().push(new RemoveElementCommand(elements[0]!));
+    } else {
+      const commands = elements.map((el) => new RemoveElementCommand(el!));
+      useHistoryStore.getState().push(new BatchCommand(commands, 'Delete elements'));
     }
   };
 
@@ -233,8 +272,15 @@ export const Toolbar = () => {
     const element = engine.getElement(selectedIds[0]);
     if (!element || element.type !== 'shape') return;
 
-    (element as ShapeElement).updateConfig(updates);
-    engine.syncElementsToStore();
+    const shapeEl = element as ShapeElement;
+    const before: ShapeConfig = { ...shapeEl.config };
+    const after: ShapeConfig = { ...before, ...updates };
+    const hasChanged = Object.entries(updates).some(([key, value]) => {
+      const k = key as keyof ShapeConfig;
+      return before[k] !== value;
+    });
+    if (!hasChanged) return;
+    useHistoryStore.getState().push(new UpdateShapeConfigCommand(shapeEl.id, before, after));
   };
 
   const handleUpdateTextConfig = (updates: Partial<TextConfig>) => {
@@ -512,30 +558,28 @@ export const Toolbar = () => {
           <Flex alignItems="center" gap={2} ml={1}>
             <PropInput label="x" value={Math.round(selectedTopLeft?.x ?? 0)} onChange={(v) => {
               handlePositionChange('x', v);
-            }} />
+            }} onFocus={captureTransformSnapshot} onBlur={commitTransformSnapshot} />
             <PropInput label="y" value={Math.round(selectedTopLeft?.y ?? 0)} onChange={(v) => {
               handlePositionChange('y', v);
-            }} />
+            }} onFocus={captureTransformSnapshot} onBlur={commitTransformSnapshot} />
 
             <Divider />
 
             <PropInput label="W" value={Math.round(selectedElement.width)} onChange={(v) => {
               handleDimensionChange('width', v);
-            }} />
+            }} onFocus={captureTransformSnapshot} onBlur={commitTransformSnapshot} />
             <Tooltip content={lockAspectRatio ? 'Unlock aspect ratio' : 'Lock aspect ratio'}>
-              
-                <Flex alignItems="center" gap={1}>
+              <Flex alignItems="center" gap={1}>
                 <TinyToggleButton
                   label={<LinkIcon linked={lockAspectRatio} />}
                   active={lockAspectRatio}
                   onClick={() => setLockAspectRatio((current) => !current)}
                 />
-                </Flex>
+              </Flex>
             </Tooltip>
             <PropInput label="H" value={Math.round(selectedElement.height)} onChange={(v) => {
               handleDimensionChange('height', v);
-            }} />
-
+            }} onFocus={captureTransformSnapshot} onBlur={commitTransformSnapshot} />
 
             <Divider />
 
@@ -543,7 +587,7 @@ export const Toolbar = () => {
               const engine = EditorEngine.getInstance();
               const el = engine.getElement(selectedElement.id);
               if (el) { el.rotation = v; engine.syncElementsToStore(); }
-            }} />
+            }} onFocus={captureTransformSnapshot} onBlur={commitTransformSnapshot} />
           </Flex>
         </Flex>
       )}

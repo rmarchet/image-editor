@@ -6,6 +6,8 @@ import { ImageElement } from '../../../engine/elements/ImageElement';
 import { useEditorStore } from '../../../stores/editorStore';
 import { useAssetStore, generateAssetId } from '../../../stores/assetStore';
 import { loadProjectFromFile } from '../../../utils/projectFile';
+import { useHistoryStore } from '../../../stores/historyStore';
+import { AddElementCommand } from '../../../engine/history/commands';
 import type { ProjectImageElement, UploadedAsset } from '../../../types';
 
 const THUMB_MAX = 80;
@@ -110,7 +112,7 @@ export const UploadPanel = () => {
 
     element.x = canvasWidth / 2;
     element.y = canvasHeight / 2;
-    engine.addElement(element);
+    useHistoryStore.getState().push(new AddElementCommand(element));
   }, []);
 
   const handleProjectFile = useCallback(async (file: File) => {

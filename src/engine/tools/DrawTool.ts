@@ -3,6 +3,8 @@ import type { BaseTool } from './BaseTool';
 import type { EditorEngine } from '../core/EditorEngine';
 import { useToolStore } from '../../stores/toolStore';
 import { DrawingElement } from '../elements/DrawingElement';
+import { AddElementCommand } from '../history/commands';
+import { useHistoryStore } from '../../stores/historyStore';
 import type { DrawingStrokeData } from '../../types';
 
 export class DrawTool implements BaseTool {
@@ -75,7 +77,7 @@ export class DrawTool implements BaseTool {
     this.engine.viewport.container.removeChild(this.currentGraphics);
 
     const element = new DrawingElement([this.currentStroke]);
-    this.engine.addElement(element);
+    useHistoryStore.getState().push(new AddElementCommand(element));
 
     this.isDrawing = false;
     this.currentGraphics = null;

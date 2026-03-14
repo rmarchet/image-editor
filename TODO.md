@@ -40,7 +40,7 @@ Extended the Save feature with multiple bitmat export formats and a confirmation
 ### 12. Extend the library of shapes [DONE ✅️]
 Added multiple shapes to the panel (Cloud, Plus, Ring, Rounded rectangle, Half circle...)
 
-### 13. Extend the History [TO-DO]
+### 13. Extend the History [DONE ✅️]
 Apply the undo-redo history to all the meaningful actions that can be perfomed by the user and that are not currently covered by the feature. It has to work also with keyboard shortcuts.
 
 ### 14. Embeddability and external configuration [TO-DO]
@@ -74,3 +74,6 @@ Allow transparent background for the canvas and add the possibility to choose fr
 
 ### 21. Guides and alignment [TO-DO]
 Enhance the editing experience adding advanced visual elements such as rulers to the artboard, guides to visually fix positions, sticky edges and alignment helpers.
+
+### 22. Copy/paste [TO-DO]
+Allows to copy and paste images and text elements to the artboard. Vector elements can only be copied internally but are not pasteable elsewhere.

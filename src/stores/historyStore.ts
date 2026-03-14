@@ -8,6 +8,7 @@ interface HistoryState {
   canRedo: boolean;
 
   push: (command: Command) => void;
+  record: (command: Command) => void;
   undo: () => void;
   redo: () => void;
   clear: () => void;
@@ -23,6 +24,13 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
 
   push: (command) => {
     command.execute();
+    set((state) => {
+      const undoStack = [...state.undoStack, command].slice(-MAX_HISTORY);
+      return { undoStack, redoStack: [], canUndo: true, canRedo: false };
+    });
+  },
+
+  record: (command) => {
     set((state) => {
       const undoStack = [...state.undoStack, command].slice(-MAX_HISTORY);
       return { undoStack, redoStack: [], canUndo: true, canRedo: false };

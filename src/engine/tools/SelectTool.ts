@@ -2,6 +2,8 @@ import type { BaseTool } from './BaseTool';
 import type { EditorEngine } from '../core/EditorEngine';
 import { TextElement } from '../elements/TextElement';
 import { useTextEditStore } from '../../stores/textEditStore';
+import { TransformCommand } from '../history/commands';
+import { useHistoryStore } from '../../stores/historyStore';
 
 export class SelectTool implements BaseTool {
   readonly name = 'select';
@@ -9,6 +11,18 @@ export class SelectTool implements BaseTool {
 
   constructor(engine: EditorEngine) {
     this.engine = engine;
+
+    engine.transform.onTransformEnd = (el, before, after) => {
+      const changed =
+        before.x !== after.x ||
+        before.y !== after.y ||
+        before.width !== after.width ||
+        before.height !== after.height ||
+        before.rotation !== after.rotation;
+      if (changed) {
+        useHistoryStore.getState().record(new TransformCommand(el.id, before, after));
+      }
+    };
   }
 
   activate() {
@@ -49,12 +63,6 @@ export class SelectTool implements BaseTool {
     if (useTextEditStore.getState().activeElementId) {
       return;
     }
-
-    if (event.key === 'Delete' || event.key === 'Backspace') {
-      const selected = this.engine.selection.getSelected();
-      for (const el of selected) {
-        this.engine.removeElement(el.id);
-      }
-    }
+    // Delete/Backspace is handled globally by shortcuts.ts
   }
 }
