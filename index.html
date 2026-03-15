@@ -25,7 +25,24 @@
         throw new Error('Root element not found');
       }
 
-      ImageEditor.mount(rootElement, {});
+      ImageEditor.mount(rootElement, {
+        enabledShapes: [], // ['rectangle', 'ellipse', 'line', 'arrow'],
+        colorPalette: {
+          backgroundSwatches: [], // ['#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff'],
+          drawSwatches: [], // ['#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff'],
+        },
+        theme: {
+          // accent: '#dd00cc',
+          // accentLight: '#ffaaee',
+          // accentDark: '#aa0099',
+          // accentHover: '#ee33bb',
+        },
+        canvas: {
+          // width: 800,
+          // height: 600,
+          // backgroundColor: '#ffffff',
+        }
+      });
     </script>
   </body>
 </html>

@@ -5,6 +5,7 @@ export type {
   ImageEditorColorPaletteConfig,
   ImageEditorConfig,
   ImageEditorFontsConfig,
+  ImageEditorThemeConfig,
   NormalizedImageEditorConfig,
 } from './embed/config';
 

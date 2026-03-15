@@ -59,11 +59,14 @@ export interface ImageEditorFontsConfig {
   families?: string[];
 }
 
-export interface ImageEditorColorPaletteConfig {
+export interface ImageEditorThemeConfig {
   accent?: string;
   accentHover?: string;
   accentLight?: string;
   accentDark?: string;
+}
+
+export interface ImageEditorColorPaletteConfig {
   backgroundSwatches?: string[];
   drawSwatches?: string[];
 }
@@ -76,6 +79,7 @@ export interface ImageEditorCanvasConfig {
 
 export interface ImageEditorConfig {
   fonts?: ImageEditorFontsConfig;
+  theme?: ImageEditorThemeConfig;
   colorPalette?: ImageEditorColorPaletteConfig;
   enabledTools?: ToolType[];
   enabledShapes?: ShapeType[];
@@ -87,11 +91,13 @@ export interface NormalizedImageEditorConfig {
     defaultFamily: string;
     families: string[];
   };
-  colorPalette: {
+  theme: {
     accent: string;
     accentHover: string;
     accentLight: string;
     accentDark: string;
+  };
+  colorPalette: {
     backgroundSwatches: string[];
     drawSwatches: string[];
   };
@@ -109,11 +115,13 @@ const DEFAULT_CONFIG: NormalizedImageEditorConfig = {
     defaultFamily: 'Arial',
     families: ['Arial'],
   },
-  colorPalette: {
+  theme: {
     accent: '#7c3aed',
     accentHover: '#5419b2',
-    accentLight: '#9d87ff',
+    accentLight: '#dccfff',
     accentDark: '#5419b2',
+  },
+  colorPalette: {
     backgroundSwatches: [...DEFAULT_BACKGROUND_SWATCHS],
     drawSwatches: [...DEFAULT_DRAW_SWATCHES],
   },
@@ -183,14 +191,13 @@ export function normalizeImageEditorConfig(
 ): NormalizedImageEditorConfig {
   return {
     fonts: normalizeFonts(config?.fonts),
+    theme: {
+      accent: config?.theme?.accent?.trim() || DEFAULT_CONFIG.theme.accent,
+      accentHover: config?.theme?.accentHover?.trim() || DEFAULT_CONFIG.theme.accentHover,
+      accentLight: config?.theme?.accentLight?.trim() || DEFAULT_CONFIG.theme.accentLight,
+      accentDark: config?.theme?.accentDark?.trim() || DEFAULT_CONFIG.theme.accentDark,
+    },
     colorPalette: {
-      accent: config?.colorPalette?.accent?.trim() || DEFAULT_CONFIG.colorPalette.accent,
-      accentHover:
-        config?.colorPalette?.accentHover?.trim() || DEFAULT_CONFIG.colorPalette.accentHover,
-      accentLight:
-        config?.colorPalette?.accentLight?.trim() || DEFAULT_CONFIG.colorPalette.accentLight,
-      accentDark:
-        config?.colorPalette?.accentDark?.trim() || DEFAULT_CONFIG.colorPalette.accentDark,
       backgroundSwatches: normalizeColorList(
         config?.colorPalette?.backgroundSwatches,
         DEFAULT_CONFIG.colorPalette.backgroundSwatches
@@ -253,19 +260,19 @@ export function getDefaultFontFamily() {
 }
 
 export function getAccentColor() {
-  return currentConfig.colorPalette.accent;
+  return currentConfig.theme.accent;
 }
 
 export function getAccentHoverColor() {
-  return currentConfig.colorPalette.accentHover;
+  return currentConfig.theme.accentHover;
 }
 
 export function getAccentLightColor() {
-  return currentConfig.colorPalette.accentLight;
+  return currentConfig.theme.accentLight;
 }
 
 export function getAccentDarkColor() {
-  return currentConfig.colorPalette.accentDark;
+  return currentConfig.theme.accentDark;
 }
 
 export function getBackgroundSwatches() {

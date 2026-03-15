@@ -43,7 +43,7 @@ Added multiple shapes to the panel (Cloud, Plus, Ring, Rounded rectangle, Half c
 ### 13. Extend the History [DONE ✅️]
 Apply the undo-redo history to all the meaningful actions that can be perfomed by the user and that are not currently covered by the feature. It has to work also with keyboard shortcuts.
 
-### 14. Embeddability and external configuration [TO-DO]
+### 14. Embeddability and external configuration [WIP]
 The Image Editor application must be embeddable in other applications, without being affected by expternal styles or scripts. It must run in isolation and must interact with the hosting application with callbacks and action methods.
 A configuration object must be defined so the hosting application can pass parameters to customize the editing experience. Config options can be:
 - fonts
@@ -53,12 +53,16 @@ A configuration object must be defined so the hosting application can pass param
 - `onSave` callback
 - `onSaveProject` callback
 
-#### 14.1 Embedding Shell and Mount API [TO-DO]
+#### 14.1 Embedding Shell and Mount API [DONE ✅️]
 Restructure the project to allow a different way of embedding, introducing shadow DOM
 for scope isolation.
 
-#### 14.2 Runtime Config Propagation [TO-DO]
-The new embedding mechanism also provides parameters to be passed to the Editor.
+#### 14.2 Runtime Config Propagation [DONE ✅️]
+The new embedding mechanism also provides parameters to be passed to the Editor. The initial config provides a way to set:
+- color palette
+- enable / disable shapes
+- basic theme customization
+- initial artboard size and background
 
 #### 14.3 initialProject / initialImage [TO-DO]
 Allow to specify the starting content of a working session. It can either be the JSON of a project or the URL / blob of an image.
@@ -93,3 +97,6 @@ Allows to copy and paste images and text elements to the artboard. Vector elemen
 
 ### 23. Translations [TO-DO]
 Use react-intl to introduce a multi-language environment. This way it's possible to have the Image Editor with labels translated in different languages.
+
+### 24. Unit tests [TO-DO]
+Install a unit test library (Jest / Vitest) and a library to test React components (RTL) and cover the application with enough unit tests.
