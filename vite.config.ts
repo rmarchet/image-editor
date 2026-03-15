@@ -62,10 +62,16 @@ export default defineConfig(({ mode }) => {
               return;
             }
 
-            if (normalizedId.includes('/react-icons/')) {
-              return 'vendor-icons';
+            if (normalizedId.includes('/jspdf/')) {
+              return 'vendor-pdf';
             }
-
+            if (
+              normalizedId.includes('CanvasRenderer') ||
+              normalizedId.includes('WebGPURenderer') ||
+              normalizedId.includes('WebGLRenderer')
+            ) {
+              return 'vendor-rendering';
+            }
             if (
               normalizedId.includes('/node_modules/react/') ||
               normalizedId.includes('/node_modules/react-dom/') ||
@@ -81,6 +87,7 @@ export default defineConfig(({ mode }) => {
               normalizedId.includes('/@ark-ui/') ||
               normalizedId.includes('/@zag-js/') ||
               normalizedId.includes('/@floating-ui/') ||
+              normalizedId.includes('/react-icons/') ||
               normalizedId.includes('/@internationalized/')
             ) {
               return 'vendor-ui';
