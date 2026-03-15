@@ -4,6 +4,7 @@ import { ShapeElement } from '../elements/ShapeElement';
 import { useToolStore } from '../../stores/toolStore';
 import { AddElementCommand } from '../history/commands';
 import { useHistoryStore } from '../../stores/historyStore';
+import { getDefaultShapeType, isShapeEnabled, isToolEnabled } from '../../embed/config';
 
 export class ShapeTool implements BaseTool {
   readonly name = 'shape';
@@ -29,11 +30,16 @@ export class ShapeTool implements BaseTool {
   }
 
   onPointerDown(worldX: number, worldY: number) {
+    if (!isToolEnabled('shape')) return;
+
     const { shapeConfig } = useToolStore.getState();
+    const shapeType = isShapeEnabled(shapeConfig.shapeType)
+      ? shapeConfig.shapeType
+      : getDefaultShapeType();
 
     this.startPoint = { x: worldX, y: worldY };
     this.activeElement = new ShapeElement({
-      shapeType: shapeConfig.shapeType,
+      shapeType,
       fillColor: shapeConfig.fillColor,
       strokeColor: shapeConfig.strokeColor,
       strokeWidth: shapeConfig.strokeWidth,

@@ -11,11 +11,17 @@ interface TextEditState {
   clearSession: () => void;
 }
 
+function getTextEditStoreDefaults() {
+  return {
+    activeElementId: null as string | null,
+    draftText: '',
+    originalText: '',
+    sessionVersion: 0,
+  };
+}
+
 export const useTextEditStore = create<TextEditState>((set) => ({
-  activeElementId: null,
-  draftText: '',
-  originalText: '',
-  sessionVersion: 0,
+  ...getTextEditStoreDefaults(),
 
   startSession: (activeElementId, initialText) =>
     set((state) => ({
@@ -34,3 +40,7 @@ export const useTextEditStore = create<TextEditState>((set) => ({
       originalText: '',
     }),
 }));
+
+export function resetTextEditStore() {
+  useTextEditStore.setState(getTextEditStoreDefaults());
+}

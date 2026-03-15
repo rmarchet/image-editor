@@ -41,6 +41,18 @@ export const useAssetStore = create<AssetState>((set) => ({
     }),
 }));
 
+export function resetAssetStore() {
+  useAssetStore.setState((state) => {
+    for (const asset of state.assets) {
+      revokeIfObjectUrl(asset.blobUrl);
+    }
+
+    return { assets: [] };
+  });
+
+  assetCounter = 0;
+}
+
 export function generateAssetId(): string {
   return `asset-${++assetCounter}-${Date.now()}`;
 }

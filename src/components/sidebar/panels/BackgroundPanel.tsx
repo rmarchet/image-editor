@@ -4,29 +4,13 @@ import { useEditorStore } from '../../../stores/editorStore';
 import { EditorEngine } from '../../../engine/core/EditorEngine';
 import { useHistoryStore } from '../../../stores/historyStore';
 import { UpdateCanvasBackgroundCommand } from '../../../engine/history/commands';
-
-const presetColors = [
-  '#ffffff',
-  '#f8f9fa',
-  '#e9ecef',
-  '#000000',
-  '#1e1e2e',
-  '#ef4444',
-  '#f97316',
-  '#eab308',
-  '#22c55e',
-  '#3b82f6',
-  '#8b5cf6',
-  '#ec4899',
-  '#14b8a6',
-  '#f59e0b',
-  '#6366f1',
-  '#d946ef',
-];
+import { getAccentColor, getBackgroundSwatches } from '../../../embed/config';
 
 export const BackgroundPanel = () => {
   const backgroundColor = useEditorStore((s) => s.backgroundColor);
   const colorPickerSnapshotRef = useRef<string | null>(null);
+  const accentColor = getAccentColor();
+  const presetColors = getBackgroundSwatches();
 
   const setColor = (color: string) => {
     const engine = EditorEngine.getInstance();
@@ -78,7 +62,7 @@ export const BackgroundPanel = () => {
               borderRadius="6px"
               bg={color}
               border="2px solid"
-              borderColor={backgroundColor === color ? '#7c3aed' : '#313244'}
+              borderColor={backgroundColor === color ? accentColor : '#313244'}
               cursor="pointer"
               transition="all 0.1s"
               onClick={() => setColor(color)}

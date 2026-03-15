@@ -1,0 +1,241 @@
+# Phase 14 - Embeddability and External Configuration
+
+## Overview
+
+Phase 14 introduces the runtime boundary required to embed the image editor inside a host application.
+
+The editor must stop behaving like a page-owned SPA and start behaving like a mountable widget with:
+
+- a public mount API
+- UI and style isolation
+- a host-provided configuration object
+- explicit lifecycle ownership
+- host-oriented integration points for future save/load flows
+
+This phase is intentionally split into sub-phases. The first implementation tranche focuses on the embedding shell: `mount(container, config)`, Shadow DOM mounting, single-instance lifecycle control, and the first normalized config surface.
+
+---
+
+## Scope Summary
+
+Covered by Phase 14:
+
+- embedding the editor into an arbitrary host element
+- isolating UI styles from the host page with Shadow DOM
+- exposing a mount API instead of hard-coding `#root`
+- defining and normalizing a host configuration object
+- gating editor capabilities from config instead of only from hard-coded UI lists
+- preparing host-owned lifecycle and future callback handoff
+
+Intentionally split out into later sub-phases:
+
+- host-managed save/export callbacks
+- initial project/image bootstrapping
+- full custom font management UI and loading workflow
+- packaging the editor as a polished reusable library artifact
+- true multi-instance support in the same page
+
+---
+
+## Sub-phase Roadmap
+
+### Phase 14.1 - Embedding Shell and Mount API
+
+Goal:
+- move the editor bootstrap behind a public `mount(container, config)` API
+- mount the UI inside a Shadow DOM
+- scope Chakra/Emotion output to the embedded root
+- enforce a clean single-instance lifecycle with `destroy()`
+- introduce the first normalized config contract
+
+Key outcomes:
+- the existing SPA entry becomes a thin local-demo wrapper over the same mount API
+- the editor can be rendered inside another application without relying on global page layout
+- style portals and environment-sensitive UI are kept inside the embedded root
+
+### Phase 14.2 - Runtime Config Propagation
+
+Goal:
+- make the config object authoritative for the first set of host customizations
+
+Key outcomes:
+- enabled tools are hidden and ignored at runtime
+- enabled shapes are filtered in the panel and validated in the drawing flow
+- default text font family is host-configurable
+- swatch-based color surfaces start reading from config instead of hard-coded lists
+- panel visibility follows feature availability where appropriate
+
+### Phase 14.3 - Host Initialization and Imperative API
+
+Goal:
+- let the host initialize the editor with content and interact with it after mount
+
+Key outcomes:
+- support `initialProject` and `initialImage`
+- expose imperative methods such as `focus`, `loadProject`, `loadImage`, and `getProjectData`
+- keep keyboard shortcuts active only while the embedded editor owns focus
+
+### Phase 14.4 - Host-managed Save and Export
+
+Goal:
+- decouple output generation from browser download so the host can own persistence
+
+Key outcomes:
+- project serialization is available as data, not only as downloaded file
+- raster/vector export flows return payloads that the host can consume
+- `onSaveProject` and `onSave` replace the local download flow when configured
+- toolbar actions, dialog actions, and save shortcuts route through host callbacks
+
+### Phase 14.5 - Packaging and Integration Docs
+
+Goal:
+- expose the mount API through a reusable package/build surface and document how the host should consume it
+
+Key outcomes:
+- dedicated library-facing entry/build
+- integration examples in repo docs
+- explicit statement of supported and unsupported embed scenarios
+- clear handoff to later phases such as fonts management and color-management overhaul
+
+---
+
+## 1. Embedding Shell and Mount API
+
+The first sub-phase converts the editor from a page application into an embeddable runtime shell.
+
+Implementation direction:
+
+- create `mount(container, config)` as the public bootstrap entry
+- create a Shadow DOM root inside the host container
+- render the React app into that shadow root instead of directly into the document body
+- use Chakra + Emotion with a shadow-aware environment and style insertion point
+- return an imperative handle with at least:
+  - `destroy()`
+  - `focus()`
+  - `getConfig()`
+- treat the current architecture as single-instance for now and fail fast on a second mount attempt
+
+Important constraints:
+
+- the current engine and stores remain singleton/global internally in this tranche
+- the public runtime boundary must hide those internals from the host
+- mount and destroy must fully reset editor state between sessions
+
+---
+
+## 2. Runtime Config Contract
+
+The config object starts small, but it must be normalized at the boundary so UI and engine code consume one consistent runtime shape.
+
+Initial config surface for the first tranche:
+
+- `fonts`
+  - `defaultFamily`
+  - `families`
+- `colorPalette`
+  - `accent`
+  - `accentHover`
+  - `accentLight`
+  - `backgroundSwatches`
+  - `drawSwatches`
+- `enabledTools`
+- `enabledShapes`
+- `canvas`
+  - `width`
+  - `height`
+  - `backgroundColor`
+
+Rules:
+
+- `select` is always preserved as a valid fallback tool
+- shape defaults are clamped to the first enabled shape
+- empty/invalid lists fall back to built-in defaults
+- this contract is additive: later sub-phases can extend it without breaking 14.1 consumers
+
+---
+
+## 3. Host Initialization and Imperative API
+
+This part prepares the editor to cooperate with the outer application rather than hijacking global page behavior.
+
+Design notes:
+
+- global keyboard listeners must become focus-aware
+- canvas interactions should move focus into the embedded editor root
+- portalled UI such as menus and tooltips must stay inside the shadow root
+- future host-owned actions should be exposed through the handle rather than through direct store access
+
+Not yet completed in the first tranche:
+
+- project/image initialization payloads
+- full load methods on the public handle
+
+---
+
+## 4. Save/Export Callback Handoff
+
+Save and export are part of Phase 14, but not part of the first implementation cut.
+
+Planned architecture:
+
+- split serialization/generation from browser download
+- treat download as an adapter, not as the core export path
+- hand editable project payloads to `onSaveProject`
+- hand rendered export payloads to `onSave`
+
+This keeps embedded usage compatible with host-owned APIs, server uploads, custom dialogs, and application-specific persistence rules.
+
+---
+
+## 5. Packaging and Integration Notes
+
+The public mount API exists before the package-level library build is finalized.
+
+That sequencing is intentional:
+
+- first stabilize the runtime contract inside the repo
+- then package it cleanly for external consumption
+
+This avoids coupling packaging work to an unstable API surface.
+
+---
+
+## Technical File Summary
+
+Core files for the phase:
+
+| File | Responsibility |
+|------|----------------|
+| `src/index.ts` | Public runtime entry exports |
+| `src/embed/mountImageEditor.tsx` | Mount API, Shadow DOM bootstrap, single-instance lifecycle |
+| `src/embed/config.ts` | Config types, defaults, normalization, feature gating helpers |
+| `src/embed/domEnvironment.ts` | Embedded DOM/focus environment helpers |
+| `src/app/EditorRoot.tsx` | Chakra/Emotion/Environment wrapper for embedded rendering |
+| `src/app/EditorEnvironment.tsx` | Portal host context for UI rendered inside Shadow DOM |
+| `src/app/theme.ts` | Shadow-aware Chakra system factory |
+| `src/main.tsx` | Local app bootstrap via the same public mount API |
+| `src/stores/resetStores.ts` | Centralized runtime reset for mount/destroy |
+| `src/utils/shortcuts.ts` | Focus-aware embedded keyboard handling |
+| `src/engine/core/Viewport.ts` | Focus-aware pan/space keyboard handling |
+| `src/engine/tools/ToolManager.ts` | Tool gating and keyboard scoping |
+
+---
+
+## Verification Checklist
+
+1. Mount the editor into a plain host `<div>` and confirm the UI renders correctly.
+2. Confirm Chakra/Emotion styles are inserted inside the Shadow DOM instead of the document head.
+3. Click inside the editor canvas and verify keyboard shortcuts become active.
+4. Focus outside the editor and verify editor shortcuts no longer hijack the page.
+5. Disable `crop`, `draw`, `text`, or `shape` from config and verify the related UI/actions disappear or are ignored.
+6. Disable a subset of shapes and verify the Shapes panel and shape tool respect the whitelist.
+7. Pass a different default text font family and verify newly created text uses it.
+8. Destroy the mounted editor and remount it; confirm the new session starts from clean state.
+
+---
+
+## Outcome
+
+Phase 14 establishes the runtime boundary the editor needs in order to behave as an embeddable component instead of only as a standalone page app.
+
+The first implementation tranche delivers the shell required for that transition: public mount API, Shadow DOM isolation, normalized config, and controlled lifecycle. Later sub-phases extend that boundary with host initialization, save/export callback handoff, and package-level integration support.

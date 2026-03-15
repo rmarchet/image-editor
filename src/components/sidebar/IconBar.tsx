@@ -11,9 +11,16 @@ import {
 } from 'react-icons/bi';
 import { useEditorStore } from '../../stores/editorStore';
 import type { SidebarPanel } from '../../types';
+import {
+  getAccentColor,
+  getAccentLightColor,
+  getAccentDarkColor,
+  isPanelEnabled,
+  getAccentHoverColor,
+} from '../../embed/config';
 
 interface PanelItem {
-  id: SidebarPanel;
+  id: Exclude<SidebarPanel, null>;
   icon: React.ReactNode;
   label: string;
 }
@@ -32,6 +39,11 @@ const panels: PanelItem[] = [
 export const IconBar = () => {
   const activePanel = useEditorStore((s) => s.activePanel);
   const setActivePanel = useEditorStore((s) => s.setActivePanel);
+  const accentColor = getAccentColor();
+  const accentLightColor = getAccentLightColor();
+  const accentDarkColor = getAccentDarkColor();
+  const accentHoverColor = getAccentHoverColor();
+  const visiblePanels = panels.filter((panel) => isPanelEnabled(panel.id));
 
   return (
     <Flex
@@ -53,7 +65,7 @@ export const IconBar = () => {
         justifyContent="center"
         w="100%"
         h="48px"
-        bg="#7c3aed"
+        bg={accentColor}
         className='logo'
       >
         <img
@@ -63,7 +75,7 @@ export const IconBar = () => {
           height={32}
         />
       </Box>
-      {panels.map((panel) => (
+      {visiblePanels.map((panel) => (
         <Box
           key={panel.id}
           as="button"
@@ -73,11 +85,11 @@ export const IconBar = () => {
           justifyContent="center"
           w="100%"
           h="54px"
-          bg={activePanel === panel.id ? '#7c3aed55' : 'transparent'}
+          bg={activePanel === panel.id ? accentDarkColor : 'transparent'}
           color={activePanel === panel.id ? '#cdd6f4' : '#6c7086'}
           cursor="pointer"
           transition="all 0.15s"
-          _hover={{ bg: '#7c3aed55', color: '#cdd6f4' }}
+          _hover={{ bg: accentHoverColor, color: '#cdd6f4' }}
           onClick={() => setActivePanel(panel.id)}
           className='icon-button'
         >

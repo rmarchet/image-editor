@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
-import { ChakraProvider, Flex } from '@chakra-ui/react';
-import { system } from './theme';
+import { Flex } from '@chakra-ui/react';
 import { Sidebar } from '../components/sidebar/Sidebar';
 import { CanvasHost } from '../components/canvas/CanvasHost';
 import { Toolbar } from '../components/toolbar/Toolbar';
@@ -13,15 +12,13 @@ export const App = () => {
   }, []);
 
   return (
-    <ChakraProvider value={system}>
-      <Flex h="100vh" w="100vw" overflow="hidden">
-        <Sidebar />
-        <Flex direction="column" flex="1" minW="0">
-          <Toolbar />
-          <CanvasHost />
-          <BottomBar />
-        </Flex>
+    <Flex h="100%" w="100%" overflow="hidden">
+      <Sidebar />
+      <Flex direction="column" flex="1" minW="0" position="relative">
+        <Toolbar />
+        <CanvasHost />
+        <BottomBar />
       </Flex>
-    </ChakraProvider>
+    </Flex>
   );
 };

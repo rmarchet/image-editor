@@ -2,11 +2,15 @@ import { Flex, Box, Menu, Portal } from '@chakra-ui/react';
 import { BiChevronDown, BiZoomIn, BiZoomOut } from 'react-icons/bi';
 import { useEditorStore } from '../../stores/editorStore';
 import { EditorEngine } from '../../engine/core/EditorEngine';
+import { useEditorEnvironment } from '../../app/EditorEnvironment';
+import { getAccentColor } from '../../embed/config';
 
 const ZOOM_PRESETS = [10, 25, 50, 75, 100, 125, 150, 200, 300, 400, 500];
 
 export const BottomBar = () => {
   const zoom = useEditorStore((s) => s.zoom);
+  const environment = useEditorEnvironment();
+  const accentColor = getAccentColor();
 
   const withInitializedEngine = (action: (engine: EditorEngine) => void) => {
     const engine = EditorEngine.getInstance();
@@ -85,7 +89,7 @@ export const BottomBar = () => {
             <BiChevronDown size={12} />
           </Box>
         </Menu.Trigger>
-        <Portal>
+        <Portal container={environment?.portalRef}>
           <Menu.Positioner>
             <Menu.Content minW="90px" p={1} bg="black">
               {ZOOM_PRESETS.map((preset) => (
@@ -97,7 +101,7 @@ export const BottomBar = () => {
                   color="gray.200"
                   px={2}
                   py={1}
-                  bg={Math.round(zoom * 100) === preset ? '#7c3aed' : undefined}
+                  bg={Math.round(zoom * 100) === preset ? accentColor : undefined}
                   onSelect={() => handleZoomPreset(preset)}
                 >
                   {preset}%

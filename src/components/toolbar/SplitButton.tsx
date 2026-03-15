@@ -2,6 +2,7 @@ import { Box, Flex, Text } from '@chakra-ui/react';
 import { useRef, useState, useEffect, type ReactNode } from 'react';
 import { BiSave, BiChevronDown, BiImage, BiFile, BiCode } from 'react-icons/bi';
 import { useEditorStore } from '../../stores/editorStore';
+import { getAccentColor, getAccentHoverColor } from '../../embed/config';
 
 interface MenuItem {
   label: string;
@@ -27,16 +28,29 @@ export const SplitButton = ({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const setSaveDialogOpen = useEditorStore((s) => s.setSaveDialogOpen);
+  const accentColor = getAccentColor();
+  const accentHoverColor = getAccentHoverColor();
 
   useEffect(() => {
     if (!open) return;
+
+    const ownerDocument = ref.current?.ownerDocument ?? document;
+
     const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+      const clickedInside = ref.current
+        ? path.length > 0
+          ? path.includes(ref.current)
+          : ref.current.contains(e.target as Node)
+        : false;
+
+      if (!clickedInside) {
         setOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+
+    ownerDocument.addEventListener('mousedown', handleClick);
+    return () => ownerDocument.removeEventListener('mousedown', handleClick);
   }, [open]);
 
   const menuItems: MenuItem[] = [
@@ -60,11 +74,11 @@ export const SplitButton = ({
         borderRadius="6px 0 0 6px"
         fontSize="xs"
         fontWeight="500"
-        bg="#7c3aed"
+        bg={accentColor}
         color="white"
         cursor="pointer"
         transition="all 0.1s"
-        _hover={{ bg: '#6d28d9' }}
+        _hover={{ bg: accentHoverColor }}
         onClick={onSave}
         aria-label="Save Project"
       >
@@ -81,12 +95,12 @@ export const SplitButton = ({
         py={1.5}
         borderRadius="0 6px 6px 0"
         fontSize="xs"
-        bg="#7c3aed"
+        bg={accentColor}
         color="white"
         cursor="pointer"
         transition="all 0.1s"
         borderLeft="1px solid rgba(255,255,255,0.25)"
-        _hover={{ bg: '#6d28d9' }}
+        _hover={{ bg: accentHoverColor }}
         onClick={() => setOpen((v) => !v)}
         aria-label="Export options"
         aria-haspopup="true"

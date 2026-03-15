@@ -8,6 +8,7 @@ import { LayersPanel } from './panels/LayersPanel';
 import { BackgroundPanel } from './panels/BackgroundPanel';
 import { FiltersPanel } from './panels/FiltersPanel';
 import { SettingsPanel } from './panels/SettingsPanel';
+import { getAccentLightColor, getAccentDarkColor, isPanelEnabled } from '../../embed/config';
 
 const panelTitles: Record<Exclude<SidebarPanel, null>, string> = {
   upload: 'Upload',
@@ -36,8 +37,13 @@ interface SidePanelProps {
 }
 
 export const SidePanel = ({ panel }: SidePanelProps) => {
-  const PanelComponent = panelComponents[panel];
+  if (!isPanelEnabled(panel)) {
+    return null;
+  }
 
+  const PanelComponent = panelComponents[panel];
+  const accentLightColor = getAccentLightColor();
+  const accentDarkColor = getAccentDarkColor();
   return (
     <Box
       w="250px"
@@ -52,7 +58,7 @@ export const SidePanel = ({ panel }: SidePanelProps) => {
       <Box
         px={4}
         py="14px"
-        bg="#7c3aed55"
+        bg={accentDarkColor}
         borderBottom="1px solid"
         borderColor="#313244"
         className='sidebar-panel-header'

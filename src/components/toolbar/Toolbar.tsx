@@ -39,6 +39,7 @@ import { saveProjectToFile } from '../../utils/projectFile';
 import { SplitButton } from './SplitButton';
 import { SaveExportDialog } from './SaveExportDialog';
 import type { ToolType } from '../../types';
+import { isToolEnabled } from '../../embed/config';
 
 const tools: { id: ToolType; icon: ReactNode; label: string }[] = [
   { id: 'select', icon: <BiPointer size={16} />, label: 'Select' },
@@ -75,6 +76,8 @@ export const Toolbar = () => {
   const redo = useHistoryStore((s) => s.redo);
   const selectedIds = useElementStore((s) => s.selectedIds);
   const elements = useElementStore((s) => s.elements);
+
+  const visibleTools = tools.filter((tool) => isToolEnabled(tool.id));
 
   const selectedElement = selectedIds.length === 1
     ? elements.find((el) => el.id === selectedIds[0])
@@ -350,7 +353,7 @@ export const Toolbar = () => {
     >
       {/* Tool buttons */}
       <Flex gap={1} mr={2}>
-        {tools.map((tool) => (
+        {visibleTools.map((tool) => (
           <Tooltip key={tool.id} content={tool.label}>
             <span>
               <ToolButton

@@ -8,6 +8,8 @@ import { ShapeTool } from './ShapeTool';
 import { useToolStore } from '../../stores/toolStore';
 import { useEditorStore } from '../../stores/editorStore';
 import type { ToolType } from '../../types';
+import { isToolEnabled } from '../../embed/config';
+import { shouldHandleEditorKeyboardEvent } from '../../embed/domEnvironment';
 
 export class ToolManager {
   private tools: Map<ToolType, BaseTool> = new Map();
@@ -26,6 +28,10 @@ export class ToolManager {
     this.tools.set('shape', new ShapeTool(engine));
 
     this.keyHandler = (e: KeyboardEvent) => {
+      if (!shouldHandleEditorKeyboardEvent(e)) {
+        return;
+      }
+
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -57,6 +63,8 @@ export class ToolManager {
     const canvas = this.engine.app.canvas as HTMLCanvasElement;
 
     canvas.addEventListener('pointerdown', (e) => {
+      canvas.focus({ preventScroll: true });
+
       const isPanning = useEditorStore.getState().isPanning;
       if (e.button === 1 || isPanning) return;
 
@@ -104,6 +112,13 @@ export class ToolManager {
   }
 
   private switchTool(toolType: ToolType) {
+    if (!isToolEnabled(toolType)) {
+      if (toolType !== 'select') {
+        useToolStore.getState().setActiveTool('select');
+      }
+      toolType = 'select';
+    }
+
     if (this.activeTool) {
       this.activeTool.deactivate();
     }

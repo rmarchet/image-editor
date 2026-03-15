@@ -1,5 +1,6 @@
 import { Container, type Application } from 'pixi.js';
 import { useEditorStore } from '../../stores/editorStore';
+import { shouldHandleEditorKeyboardEvent } from '../../embed/domEnvironment';
 
 export class Viewport {
   readonly container: Container;
@@ -63,6 +64,10 @@ export class Viewport {
   };
 
   private onKeyDown = (e: KeyboardEvent) => {
+    if (!shouldHandleEditorKeyboardEvent(e)) {
+      return;
+    }
+
     const target = e.target as HTMLElement | null;
     if (
       target &&
@@ -89,6 +94,8 @@ export class Viewport {
   };
 
   private onPointerDown = (e: PointerEvent) => {
+    (this.app.canvas as HTMLCanvasElement).focus({ preventScroll: true });
+
     if (e.button === 1 || (e.button === 0 && this.spaceDown)) {
       this.isPanning = true;
       this.lastPointer = { x: e.clientX, y: e.clientY };

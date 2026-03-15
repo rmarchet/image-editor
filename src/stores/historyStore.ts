@@ -16,11 +16,17 @@ interface HistoryState {
 
 const MAX_HISTORY = 50;
 
+function getHistoryStoreDefaults() {
+  return {
+    undoStack: [] as Command[],
+    redoStack: [] as Command[],
+    canUndo: false,
+    canRedo: false,
+  };
+}
+
 export const useHistoryStore = create<HistoryState>((set, get) => ({
-  undoStack: [],
-  redoStack: [],
-  canUndo: false,
-  canRedo: false,
+  ...getHistoryStoreDefaults(),
 
   push: (command) => {
     command.execute();
@@ -78,3 +84,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
   clear: () =>
     set({ undoStack: [], redoStack: [], canUndo: false, canRedo: false }),
 }));
+
+export function resetHistoryStore() {
+  useHistoryStore.setState(getHistoryStoreDefaults());
+}

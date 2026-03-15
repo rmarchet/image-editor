@@ -1,11 +1,19 @@
 import { Graphics, type Container } from 'pixi.js';
 import { BaseElement } from '../elements/BaseElement';
 import { useElementStore } from '../../stores/elementStore';
+import { getAccentColor } from '../../embed/config';
 
 const HANDLE_SIZE = 8;
-const HANDLE_COLOR = 0x7c3aed;
-const BORDER_COLOR = 0x7c3aed;
 const ROTATION_HANDLE_OFFSET = 25;
+
+function colorToHex(color: string, fallback: number) {
+  if (!color.startsWith('#')) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(color.slice(1), 16);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
 
 type CornerName = 'nw' | 'ne' | 'se' | 'sw';
 
@@ -140,6 +148,7 @@ export class SelectionManager {
 
   drawOverlay(zoom = 1) {
     this.overlay.clear();
+    const accentColor = colorToHex(getAccentColor(), 0x7c3aed);
 
     const stillSelected = this.selectedElements.filter((el) =>
       this.allElements.includes(el)
@@ -163,7 +172,7 @@ export class SelectionManager {
         this.overlay.lineTo(frame.corners.se.x, frame.corners.se.y);
         this.overlay.lineTo(frame.corners.sw.x, frame.corners.sw.y);
         this.overlay.lineTo(frame.corners.nw.x, frame.corners.nw.y);
-        this.overlay.stroke({ width: lineWidth, color: BORDER_COLOR });
+        this.overlay.stroke({ width: lineWidth, color: accentColor });
 
         const corners = [
           frame.corners.nw,
@@ -195,11 +204,11 @@ export class SelectionManager {
         if (this.selectedElements.length === 1) {
           this.overlay.moveTo(frame.topMid.x, frame.topMid.y);
           this.overlay.lineTo(frame.rotationHandle.x, frame.rotationHandle.y);
-          this.overlay.stroke({ width: lineWidth, color: BORDER_COLOR });
+          this.overlay.stroke({ width: lineWidth, color: accentColor });
 
           this.overlay.circle(frame.rotationHandle.x, frame.rotationHandle.y, handleSize / 2);
           this.overlay.fill(0xffffff);
-          this.overlay.stroke({ width: lineWidth, color: HANDLE_COLOR });
+          this.overlay.stroke({ width: lineWidth, color: accentColor });
         }
       } catch {
         // Element may be destroyed (e.g. after delete); skip drawing
@@ -249,7 +258,7 @@ export class SelectionManager {
     this.overlay.lineTo(p4.x, p4.y);
     this.overlay.lineTo(p1.x, p1.y);
     this.overlay.fill(0xffffff);
-    this.overlay.stroke({ width: lineWidth, color: HANDLE_COLOR });
+    this.overlay.stroke({ width: lineWidth, color: colorToHex(getAccentColor(), 0x7c3aed) });
   }
 
   private getOrientedFrame(el: BaseElement, zoom: number): OrientedFrame | null {

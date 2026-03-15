@@ -32,6 +32,10 @@ export class EditorEngine {
     return EditorEngine.instance;
   }
 
+  static destroyInstance() {
+    EditorEngine.instance?.destroy();
+  }
+
   get initialized() {
     return this._initialized;
   }
@@ -60,7 +64,11 @@ export class EditorEngine {
       autoDensity: true,
     });
 
-    hostElement.appendChild(this.app.canvas as HTMLCanvasElement);
+  const canvas = this.app.canvas as HTMLCanvasElement;
+  canvas.tabIndex = 0;
+  canvas.dataset.imageEditorCanvas = 'true';
+  canvas.style.outline = 'none';
+  hostElement.appendChild(canvas);
 
     this.viewport = new Viewport(this.app);
     this.app.stage.addChild(this.viewport.container);
@@ -255,7 +263,7 @@ export class EditorEngine {
       el.destroy();
     }
     this.elements = [];
-    if (this.hostElement && this.app?.canvas) {
+    if (this.hostElement && this.app?.canvas && this.hostElement.contains(this.app.canvas)) {
       this.hostElement.removeChild(this.app.canvas as HTMLCanvasElement);
     }
     this.app?.destroy(true);

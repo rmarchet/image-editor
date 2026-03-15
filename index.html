@@ -16,7 +16,16 @@
     </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="./src/main.tsx"></script>
+    <div id="editor"></div>
+    <script type="module">
+      import ImageEditor from './src/index.ts';
+
+      const rootElement = document.getElementById('editor');
+      if (!rootElement) {
+        throw new Error('Root element not found');
+      }
+
+      ImageEditor.mount(rootElement, {});
+    </script>
   </body>
 </html>

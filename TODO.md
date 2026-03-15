@@ -53,6 +53,19 @@ A configuration object must be defined so the hosting application can pass param
 - `onSave` callback
 - `onSaveProject` callback
 
+#### 14.1 Embedding Shell and Mount API [TO-DO]
+Restructure the project to allow a different way of embedding, introducing shadow DOM
+for scope isolation.
+
+#### 14.2 Runtime Config Propagation [TO-DO]
+The new embedding mechanism also provides parameters to be passed to the Editor.
+
+#### 14.3 initialProject / initialImage [TO-DO]
+Allow to specify the starting content of a working session. It can either be the JSON of a project or the URL / blob of an image.
+
+#### 14.4 onSave / onSaveProject callbacks [TO-DO]
+Configurable collabacs to allow the hosting application to receive the bitmap or the vector result of an export action or the JSON of the project so it's saved out of the application.
+
 ### 15. Fonts management [TO-DO]
 Must extend the Text editing experience with the choice of custom web fonts (configurable) and the line-heigh tool.
 
@@ -77,3 +90,6 @@ Enhance the editing experience adding advanced visual elements such as rulers to
 
 ### 22. Copy/paste [TO-DO]
 Allows to copy and paste images and text elements to the artboard. Vector elements can only be copied internally but are not pasteable elsewhere.
+
+### 23. Translations [TO-DO]
+Use react-intl to introduce a multi-language environment. This way it's possible to have the Image Editor with labels translated in different languages.

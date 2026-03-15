@@ -15,9 +15,15 @@ interface ElementState {
   reorderElement: (id: string, newIndex: number) => void;
 }
 
+function getElementStoreDefaults() {
+  return {
+    elements: [] as ElementSnapshot[],
+    selectedIds: [] as string[],
+  };
+}
+
 export const useElementStore = create<ElementState>((set) => ({
-  elements: [],
-  selectedIds: [],
+  ...getElementStoreDefaults(),
 
   setElements: (elements) => set({ elements }),
 
@@ -60,3 +66,7 @@ export const useElementStore = create<ElementState>((set) => ({
       return { elements };
     }),
 }));
+
+export function resetElementStore() {
+  useElementStore.setState(getElementStoreDefaults());
+}

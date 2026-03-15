@@ -5,6 +5,7 @@ import { TextElement } from '../../../engine/elements/TextElement';
 import { useEditorStore } from '../../../stores/editorStore';
 import { useHistoryStore } from '../../../stores/historyStore';
 import { AddElementCommand } from '../../../engine/history/commands';
+import { getDefaultFontFamily, isToolEnabled } from '../../../embed/config';
 
 const presets = [
   { label: 'Add Heading', placeholder: 'Heading', fontSize: 48, fontWeight: 'bold' as const },
@@ -13,6 +14,10 @@ const presets = [
 ];
 
 export const TextPanel = () => {
+  if (!isToolEnabled('text')) {
+    return null;
+  }
+
   const addText = (preset: (typeof presets)[number]) => {
     const engine = EditorEngine.getInstance();
     if (!engine.initialized) return;
@@ -22,6 +27,7 @@ export const TextPanel = () => {
       text: preset.placeholder,
       fontSize: preset.fontSize,
       fontWeight: preset.fontWeight,
+      fontFamily: getDefaultFontFamily(),
     });
 
     element.x = canvasWidth / 2;

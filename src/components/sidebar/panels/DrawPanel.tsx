@@ -1,11 +1,19 @@
 import { Box, VStack, Text, Flex } from '@chakra-ui/react';
 import { useToolStore } from '../../../stores/toolStore';
+import { getAccentColor, getAccentHoverColor, getDrawSwatches, isToolEnabled } from '../../../embed/config';
 
 export const DrawPanel = () => {
+  if (!isToolEnabled('draw')) {
+    return null;
+  }
+
   const drawConfig = useToolStore((s) => s.drawConfig);
   const setDrawConfig = useToolStore((s) => s.setDrawConfig);
   const activeTool = useToolStore((s) => s.activeTool);
   const setActiveTool = useToolStore((s) => s.setActiveTool);
+  const accentColor = getAccentColor();
+  const accentHoverColor = getAccentHoverColor();
+  const drawSwatches = getDrawSwatches();
 
   const isActive = activeTool === 'draw';
 
@@ -17,11 +25,11 @@ export const DrawPanel = () => {
         py={2}
         px={3}
         borderRadius="8px"
-        bg={isActive ? '#7c3aed' : '#2a2a3e'}
+        bg={isActive ? accentColor : '#2a2a3e'}
         color="#cdd6f4"
         cursor="pointer"
         transition="all 0.15s"
-        _hover={{ bg: isActive ? '#6d28d9' : '#3a3a5e' }}
+        _hover={{ bg: isActive ? accentHoverColor : '#3a3a5e' }}
         onClick={() => setActiveTool(isActive ? 'select' : 'draw')}
         fontSize="sm"
         fontWeight="500"
@@ -39,7 +47,7 @@ export const DrawPanel = () => {
           max="50"
           value={drawConfig.brushSize}
           onChange={(e) => setDrawConfig({ brushSize: Number(e.target.value) })}
-          style={{ width: '100%', accentColor: '#7c3aed' }}
+          style={{ width: '100%', accentColor }}
         />
         <Text fontSize="xs" color="#cdd6f4" textAlign="right">
           {drawConfig.brushSize}px
@@ -51,8 +59,7 @@ export const DrawPanel = () => {
           Color
         </Text>
         <Flex gap={2} flexWrap="wrap">
-          {['#000000', '#ffffff', '#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#ec4899'].map(
-            (color) => (
+          {drawSwatches.map((color) => (
               <Box
                 key={color}
                 as="button"
@@ -61,12 +68,11 @@ export const DrawPanel = () => {
                 borderRadius="6px"
                 bg={color}
                 border="2px solid"
-                borderColor={drawConfig.brushColor === color ? '#7c3aed' : '#313244'}
+                borderColor={drawConfig.brushColor === color ? accentColor : '#313244'}
                 cursor="pointer"
                 onClick={() => setDrawConfig({ brushColor: color })}
               />
-            )
-          )}
+            ))}
         </Flex>
       </Box>
 
@@ -81,7 +87,7 @@ export const DrawPanel = () => {
           step="0.1"
           value={drawConfig.brushOpacity}
           onChange={(e) => setDrawConfig({ brushOpacity: Number(e.target.value) })}
-          style={{ width: '100%', accentColor: '#7c3aed' }}
+          style={{ width: '100%', accentColor }}
         />
         <Text fontSize="xs" color="#cdd6f4" textAlign="right">
           {Math.round(drawConfig.brushOpacity * 100)}%

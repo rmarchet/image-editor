@@ -6,6 +6,12 @@ import { useEditorStore } from '../stores/editorStore';
 import { useTextEditStore } from '../stores/textEditStore';
 import { RemoveElementCommand, BatchCommand, MoveCommand } from '../engine/history/commands';
 import type { ToolType } from '../types';
+import { isToolEnabled } from '../embed/config';
+import {
+  getActiveEditorElement,
+  queryEditorElement,
+  shouldHandleEditorKeyboardEvent,
+} from '../embed/domEnvironment';
 
 const SHORTCUT_MAP: Record<string, () => void> = {
   'ctrl+z': () => useHistoryStore.getState().undo(),
@@ -40,9 +46,21 @@ const SHORTCUT_MAP: Record<string, () => void> = {
     if (engine.initialized) engine.selection.deselectAll();
   },
   'v': () => useToolStore.getState().setActiveTool('select'),
-  'c': () => useToolStore.getState().setActiveTool('crop'),
-  'b': () => useToolStore.getState().setActiveTool('draw'),
-  't': () => useToolStore.getState().setActiveTool('text'),
+  'c': () => {
+    if (isToolEnabled('crop')) {
+      useToolStore.getState().setActiveTool('crop');
+    }
+  },
+  'b': () => {
+    if (isToolEnabled('draw')) {
+      useToolStore.getState().setActiveTool('draw');
+    }
+  },
+  't': () => {
+    if (isToolEnabled('text')) {
+      useToolStore.getState().setActiveTool('text');
+    }
+  },
 };
 
 function deleteSelected() {
@@ -90,11 +108,13 @@ function handleTextEditShortcut(key: string, event: KeyboardEvent): boolean {
 
   event.preventDefault();
 
-  const activeElement = document.activeElement;
+  const activeElement = getActiveEditorElement();
   const overlay =
     activeElement instanceof HTMLTextAreaElement
       ? activeElement
-      : document.querySelector('textarea[data-text-edit-overlay="true"]');
+      : getActiveEditorElement() instanceof HTMLTextAreaElement
+        ? getActiveEditorElement()
+        : queryEditorElement<HTMLTextAreaElement>('textarea[data-text-edit-overlay="true"]');
 
   if (overlay instanceof HTMLTextAreaElement) {
     overlay.focus();
@@ -106,6 +126,10 @@ function handleTextEditShortcut(key: string, event: KeyboardEvent): boolean {
 
 export function setupKeyboardShortcuts(): () => void {
   const handler = (e: KeyboardEvent) => {
+    if (!shouldHandleEditorKeyboardEvent(e)) {
+      return;
+    }
+
     const key = buildKey(e);
     if (handleTextEditShortcut(key, e)) {
       return;
