@@ -8,7 +8,7 @@ import { LayersPanel } from './panels/LayersPanel';
 import { BackgroundPanel } from './panels/BackgroundPanel';
 import { FiltersPanel } from './panels/FiltersPanel';
 import { SettingsPanel } from './panels/SettingsPanel';
-import { getAccentLightColor, getAccentDarkColor, isPanelEnabled } from '../../embed/config';
+import { getTheme, isPanelEnabled } from '../../embed/config';
 
 const panelTitles: Record<Exclude<SidebarPanel, null>, string> = {
   upload: 'Upload',
@@ -42,12 +42,11 @@ export const SidePanel = ({ panel }: SidePanelProps) => {
   }
 
   const PanelComponent = panelComponents[panel];
-  const accentLightColor = getAccentLightColor();
-  const accentDarkColor = getAccentDarkColor();
+  const theme = getTheme();
   return (
     <Box
       w="250px"
-      bg="#1e1e2e"
+      bg={theme.sidebarBackground}
       borderRight="1px solid"
       borderColor="#313244"
       display="flex"
@@ -58,12 +57,12 @@ export const SidePanel = ({ panel }: SidePanelProps) => {
       <Box
         px={4}
         py="14px"
-        bg={accentDarkColor}
+        bg={theme.accentDark}
         borderBottom="1px solid"
         borderColor="#313244"
         className='sidebar-panel-header'
       >
-        <Heading size="sm" color="#cdd6f4" fontWeight="600">
+        <Heading size="sm" color={theme.sidebarActiveColor} fontWeight="600">
           {panelTitles[panel]}
         </Heading>
       </Box>
@@ -80,7 +79,7 @@ export const SidePanel = ({ panel }: SidePanelProps) => {
             width: '8px',
           },
           '&::-webkit-scrollbar-thumb': {
-            background: '#c689fe6e',
+            background: theme.accent,
             borderRadius: '24px',
           },
         }}

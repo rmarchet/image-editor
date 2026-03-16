@@ -1,6 +1,6 @@
 import { Box, VStack, Text, Flex } from '@chakra-ui/react';
 import { useToolStore } from '../../../stores/toolStore';
-import { getAccentColor, getAccentHoverColor, getDrawSwatches, isToolEnabled } from '../../../embed/config';
+import { getTheme, getDrawSwatches, isToolEnabled } from '../../../embed/config';
 
 export const DrawPanel = () => {
   if (!isToolEnabled('draw')) {
@@ -11,8 +11,9 @@ export const DrawPanel = () => {
   const setDrawConfig = useToolStore((s) => s.setDrawConfig);
   const activeTool = useToolStore((s) => s.activeTool);
   const setActiveTool = useToolStore((s) => s.setActiveTool);
-  const accentColor = getAccentColor();
-  const accentHoverColor = getAccentHoverColor();
+  const theme = getTheme();
+  const accentColor = theme.accent;
+  const accentHoverColor = theme.accentHover;
   const drawSwatches = getDrawSwatches();
 
   const isActive = activeTool === 'draw';

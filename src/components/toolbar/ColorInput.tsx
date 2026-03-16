@@ -19,9 +19,10 @@ export const ColorInput = ({ label, value, onChange }: ColorInputProps) => (
         width: 26,
         height: 20,
         padding: 0,
-        border: '1px solid #e2e8f0',
+        background: 'transparent',
+        appearance: 'none',
         borderRadius: 4,
-        background: '#f7fafc',
+        border: 'none',
         cursor: 'pointer',
       }}
     />

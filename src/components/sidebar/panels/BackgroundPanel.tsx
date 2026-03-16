@@ -4,12 +4,13 @@ import { useEditorStore } from '../../../stores/editorStore';
 import { EditorEngine } from '../../../engine/core/EditorEngine';
 import { useHistoryStore } from '../../../stores/historyStore';
 import { UpdateCanvasBackgroundCommand } from '../../../engine/history/commands';
-import { getAccentColor, getBackgroundSwatches } from '../../../embed/config';
+import { getTheme, getBackgroundSwatches } from '../../../embed/config';
 
 export const BackgroundPanel = () => {
   const backgroundColor = useEditorStore((s) => s.backgroundColor);
   const colorPickerSnapshotRef = useRef<string | null>(null);
-  const accentColor = getAccentColor();
+  const theme = getTheme();
+  const accentColor = theme.accent;
   const presetColors = getBackgroundSwatches();
 
   const setColor = (color: string) => {

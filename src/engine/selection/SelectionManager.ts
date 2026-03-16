@@ -1,7 +1,7 @@
 import { Graphics, type Container } from 'pixi.js';
 import { BaseElement } from '../elements/BaseElement';
 import { useElementStore } from '../../stores/elementStore';
-import { getAccentColor } from '../../embed/config';
+import { getTheme } from '../../embed/config';
 
 const HANDLE_SIZE = 8;
 const ROTATION_HANDLE_OFFSET = 25;
@@ -148,7 +148,8 @@ export class SelectionManager {
 
   drawOverlay(zoom = 1) {
     this.overlay.clear();
-    const accentColor = colorToHex(getAccentColor(), 0x7c3aed);
+    const theme = getTheme();
+    const accentColor = colorToHex(theme.accent, 0x7c3aed);
 
     const stillSelected = this.selectedElements.filter((el) =>
       this.allElements.includes(el)
@@ -258,7 +259,8 @@ export class SelectionManager {
     this.overlay.lineTo(p4.x, p4.y);
     this.overlay.lineTo(p1.x, p1.y);
     this.overlay.fill(0xffffff);
-    this.overlay.stroke({ width: lineWidth, color: colorToHex(getAccentColor(), 0x7c3aed) });
+    const theme = getTheme();
+    this.overlay.stroke({ width: lineWidth, color: colorToHex(theme.accent, 0x7c3aed) });
   }
 
   private getOrientedFrame(el: BaseElement, zoom: number): OrientedFrame | null {

@@ -1,6 +1,6 @@
 import { Box } from '@chakra-ui/react';
 import type { CSSProperties, ReactNode } from 'react';
-import { getAccentColor, getAccentLightColor, getAccentHoverColor } from '../../embed/config';
+import { getTheme } from '../../embed/config';
 
 interface TinyToggleButtonProps {
   label: ReactNode;
@@ -15,15 +15,16 @@ export const TinyToggleButton = ({
   onClick,
   style,
 }: TinyToggleButtonProps) => {
-  const accentColor = getAccentColor();
-  const accentLightColor = getAccentLightColor();
-  const accentHoverColor = getAccentHoverColor();
+  const theme = getTheme();
+  const accentColor = theme.accent;
+  const accentLightColor = theme.accentLight;
+  const accentHoverColor = theme.accentHover;
 
   return (
     <Box
       as="button"
       onClick={onClick}
-      minW="24px"
+      minW="22px"
       style={style}
       h="22px"
       px={1.5}
@@ -36,7 +37,7 @@ export const TinyToggleButton = ({
       fontWeight="700"
       lineHeight="1"
       cursor="pointer"
-      _hover={{ bg: active ? accentHoverColor : '#edf2f7' }}
+      _hover={{ bg: active ? accentLightColor : '#edf2f7', color: active ? 'black' : accentColor }}
     >
       {label}
     </Box>

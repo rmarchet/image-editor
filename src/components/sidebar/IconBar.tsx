@@ -12,11 +12,8 @@ import {
 import { useEditorStore } from '../../stores/editorStore';
 import type { SidebarPanel } from '../../types';
 import {
-  getAccentColor,
-  getAccentLightColor,
-  getAccentDarkColor,
   isPanelEnabled,
-  getAccentHoverColor,
+  getTheme,
 } from '../../embed/config';
 
 interface PanelItem {
@@ -39,17 +36,14 @@ const panels: PanelItem[] = [
 export const IconBar = () => {
   const activePanel = useEditorStore((s) => s.activePanel);
   const setActivePanel = useEditorStore((s) => s.setActivePanel);
-  const accentColor = getAccentColor();
-  const accentLightColor = getAccentLightColor();
-  const accentDarkColor = getAccentDarkColor();
-  const accentHoverColor = getAccentHoverColor();
+  const theme = getTheme();
   const visiblePanels = panels.filter((panel) => isPanelEnabled(panel.id));
 
   return (
     <Flex
       direction="column"
       w="66px"
-      bg="#1e1e2e"
+      bg={theme.sidebarBackground}
       borderRight="1px solid"
       borderColor="#313244"
       py={0}
@@ -65,7 +59,7 @@ export const IconBar = () => {
         justifyContent="center"
         w="100%"
         h="48px"
-        bg={accentColor}
+        bg={theme.accent}
         className='logo'
       >
         <img
@@ -85,11 +79,11 @@ export const IconBar = () => {
           justifyContent="center"
           w="100%"
           h="54px"
-          bg={activePanel === panel.id ? accentDarkColor : 'transparent'}
-          color={activePanel === panel.id ? '#cdd6f4' : '#6c7086'}
+          bg={activePanel === panel.id ? theme.accentDark : 'transparent'}
+          color={activePanel === panel.id ? theme.sidebarActiveColor : theme.sidebarColor}
           cursor="pointer"
           transition="all 0.15s"
-          _hover={{ bg: accentHoverColor, color: '#cdd6f4' }}
+          _hover={{ bg: theme.accentHover, color: theme.sidebarActiveColor }}
           onClick={() => setActivePanel(panel.id)}
           className='icon-button'
         >

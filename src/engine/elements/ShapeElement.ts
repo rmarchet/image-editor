@@ -344,7 +344,7 @@ export class ShapeElement extends BaseElement {
         g.stroke({ width: strokeWidth, color: strokeColor });
         break;
       case 'ellipse':
-        g.ellipse(shapeWidth / 2, shapeHeight / 2, shapeWidth / 2, shapeHeight / 2);
+        g.ellipse(shapeWidth / 2, shapeHeight / 1.5, shapeWidth / 2, shapeHeight / 1.5);
         g.fill(fillColor);
         g.stroke({ width: strokeWidth, color: strokeColor });
         break;
@@ -371,7 +371,7 @@ export class ShapeElement extends BaseElement {
         g.stroke({ width: strokeWidth, color: strokeColor });
         break;
       case 'semicircle':
-        this.drawSemicircle(shapeWidth, shapeHeight);
+        this.drawSemicircle(shapeWidth, shapeHeight * 0.7);
         g.fill(fillColor);
         g.stroke({ width: strokeWidth, color: strokeColor });
         break;
@@ -381,17 +381,17 @@ export class ShapeElement extends BaseElement {
         g.stroke({ width: strokeWidth, color: strokeColor });
         break;
       case 'triangle':
-        this.drawRegularPolygon(3, shapeWidth, shapeHeight);
+        this.drawRegularPolygon(3, shapeWidth, shapeHeight * 1.3);
         g.fill(fillColor);
         g.stroke({ width: strokeWidth, color: strokeColor });
         break;
       case 'pentagon':
-        this.drawRegularPolygon(5, shapeWidth, shapeHeight);
+        this.drawRegularPolygon(5, shapeWidth, shapeHeight * 1.3);
         g.fill(fillColor);
         g.stroke({ width: strokeWidth, color: strokeColor });
         break;
       case 'hexagon':
-        this.drawRegularPolygon(6, shapeWidth, shapeHeight);
+        this.drawRegularPolygon(6, shapeWidth, shapeHeight * 1.3);
         g.fill(fillColor);
         g.stroke({ width: strokeWidth, color: strokeColor });
         break;
@@ -406,7 +406,7 @@ export class ShapeElement extends BaseElement {
         g.stroke({ width: strokeWidth, color: strokeColor });
         break;
       case 'heart':
-        this.drawHeart(shapeWidth, shapeHeight);
+        this.drawHeart(shapeWidth, shapeHeight * 1.2);
         g.fill(fillColor);
         g.stroke({ width: strokeWidth, color: strokeColor });
         break;

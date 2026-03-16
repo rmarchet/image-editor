@@ -1,10 +1,10 @@
 import { createSystem, defaultConfig, defineConfig } from '@chakra-ui/react';
-import type { ImageEditorColorPaletteConfig } from '../embed/config';
+import type { ImageEditorConfig } from '../embed/config';
 
 const CSS_VAR_ROOT = ':host';
 
-export function createEditorSystem(colorPalette: ImageEditorColorPaletteConfig = {}) {
-  const config = defineConfig({
+export function createEditorSystem(imageEditorConfig: ImageEditorConfig = {}) {
+  const chakraConfig = defineConfig({
     cssVarsRoot: CSS_VAR_ROOT,
     conditions: {
       light: `${CSS_VAR_ROOT} &, .light &`,
@@ -41,17 +41,17 @@ export function createEditorSystem(colorPalette: ImageEditorColorPaletteConfig =
             border: { value: '#e2e8f0' },
           },
           accent: {
-            DEFAULT: { value: colorPalette.accent ?? '#7c3aed' },
-            hover: { value: colorPalette.accentHover ?? '#6d28d9' },
-            light: { value: colorPalette.accentLight ?? '#9d87ff' },
-            dark: { value: colorPalette.accentDark ?? '#6b21a8' },
+            DEFAULT: { value: imageEditorConfig.theme?.accent ?? '#7c3aed' },
+            hover: { value: imageEditorConfig.theme?.accentHover ?? '#6d28d9' },
+            light: { value: imageEditorConfig.theme?.accentLight ?? '#9d87ff' },
+            dark: { value: imageEditorConfig.theme?.accentDark ?? '#6b21a8' },
           },
         },
       },
     },
   });
 
-  return createSystem(defaultConfig, config);
+  return createSystem(defaultConfig, chakraConfig);
 }
 
 export const system = createEditorSystem();

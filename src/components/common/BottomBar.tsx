@@ -3,14 +3,15 @@ import { BiChevronDown, BiZoomIn, BiZoomOut } from 'react-icons/bi';
 import { useEditorStore } from '../../stores/editorStore';
 import { EditorEngine } from '../../engine/core/EditorEngine';
 import { useEditorEnvironment } from '../../app/EditorEnvironment';
-import { getAccentColor } from '../../embed/config';
+import { getTheme } from '../../embed/config';
 
 const ZOOM_PRESETS = [10, 25, 50, 75, 100, 125, 150, 200, 300, 400, 500];
 
 export const BottomBar = () => {
   const zoom = useEditorStore((s) => s.zoom);
   const environment = useEditorEnvironment();
-  const accentColor = getAccentColor();
+  const theme = getTheme();
+  const accentColor = theme.accent;
 
   const withInitializedEngine = (action: (engine: EditorEngine) => void) => {
     const engine = EditorEngine.getInstance();

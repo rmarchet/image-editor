@@ -64,6 +64,9 @@ export interface ImageEditorThemeConfig {
   accentHover?: string;
   accentLight?: string;
   accentDark?: string;
+  sidebarColor?: string;
+  sidebarActiveColor?: string;
+  sidebarBackground?: string;
 }
 
 export interface ImageEditorColorPaletteConfig {
@@ -96,6 +99,9 @@ export interface NormalizedImageEditorConfig {
     accentHover: string;
     accentLight: string;
     accentDark: string;
+    sidebarColor?: string;
+    sidebarActiveColor?: string;
+    sidebarBackground?: string;
   };
   colorPalette: {
     backgroundSwatches: string[];
@@ -120,6 +126,9 @@ const DEFAULT_CONFIG: NormalizedImageEditorConfig = {
     accentHover: '#5419b2',
     accentLight: '#dccfff',
     accentDark: '#5419b2',
+    sidebarColor: '#aba3c5cc',
+    sidebarActiveColor: '#ffffff',
+    sidebarBackground: '#1e1e2e',
   },
   colorPalette: {
     backgroundSwatches: [...DEFAULT_BACKGROUND_SWATCHS],
@@ -196,6 +205,9 @@ export function normalizeImageEditorConfig(
       accentHover: config?.theme?.accentHover?.trim() || DEFAULT_CONFIG.theme.accentHover,
       accentLight: config?.theme?.accentLight?.trim() || DEFAULT_CONFIG.theme.accentLight,
       accentDark: config?.theme?.accentDark?.trim() || DEFAULT_CONFIG.theme.accentDark,
+      sidebarColor: config?.theme?.sidebarColor?.trim() || DEFAULT_CONFIG.theme.sidebarColor,
+      sidebarActiveColor: config?.theme?.sidebarActiveColor?.trim() || DEFAULT_CONFIG.theme.sidebarActiveColor,
+      sidebarBackground: config?.theme?.sidebarBackground?.trim() || DEFAULT_CONFIG.theme.sidebarBackground,
     },
     colorPalette: {
       backgroundSwatches: normalizeColorList(
@@ -259,26 +271,22 @@ export function getDefaultFontFamily() {
   return currentConfig.fonts.defaultFamily;
 }
 
-export function getAccentColor() {
-  return currentConfig.theme.accent;
-}
-
-export function getAccentHoverColor() {
-  return currentConfig.theme.accentHover;
-}
-
-export function getAccentLightColor() {
-  return currentConfig.theme.accentLight;
-}
-
-export function getAccentDarkColor() {
-  return currentConfig.theme.accentDark;
-}
-
 export function getBackgroundSwatches() {
   return currentConfig.colorPalette.backgroundSwatches;
 }
 
 export function getDrawSwatches() {
   return currentConfig.colorPalette.drawSwatches;
+}
+
+export function getSidebarColor() {
+  return currentConfig.theme.sidebarColor;
+}
+
+export function getSidebarActiveColor() {
+  return currentConfig.theme.sidebarActiveColor;
+}
+
+export function getTheme() {
+  return currentConfig.theme;
 }

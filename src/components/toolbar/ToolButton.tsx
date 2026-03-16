@@ -1,6 +1,6 @@
 import { Box, Text } from '@chakra-ui/react';
 import type { ReactNode } from 'react';
-import { getAccentColor, getAccentHoverColor } from '../../embed/config';
+import { getTheme } from '../../embed/config';
 
 interface ToolButtonProps {
   icon: ReactNode;
@@ -21,8 +21,9 @@ export const ToolButton = ({
   showLabel = true,
   onClick,
 }: ToolButtonProps) => {
-  const accentColor = getAccentColor();
-  const accentHoverColor = getAccentHoverColor();
+  const theme = getTheme();
+  const accentColor = theme.accent;
+  const accentHoverColor = theme.accentHover;
 
   return (
     <Box

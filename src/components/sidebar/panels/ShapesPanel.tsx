@@ -8,7 +8,7 @@ import { useEditorStore } from '../../../stores/editorStore';
 import { useHistoryStore } from '../../../stores/historyStore';
 import { AddElementCommand } from '../../../engine/history/commands';
 import type { ShapeType } from '../../../types';
-import { getAccentColor, getAccentLightColor, isShapeEnabled, isToolEnabled } from '../../../embed/config';
+import { getTheme, isShapeEnabled, isToolEnabled } from '../../../embed/config';
 
 function previewStarPoints(pointCount: number, outerRadius: number, innerRadius: number) {
   const center = 16;
@@ -60,7 +60,7 @@ function getShapes(previewColor: string): { type: ShapeType; label: string; prev
     },
     {
       type: 'thickArrow',
-      label: 'Arrow 2',
+      label: 'Arrow2',
       preview: (<TbArrowBigRight size={32} color={previewColor} />),
     },
     {
@@ -153,8 +153,9 @@ export const ShapesPanel = () => {
     return null;
   }
 
-  const previewColor = getAccentColor();
-  const accentLightColor = getAccentLightColor();
+  const theme = getTheme();
+  const previewColor = theme.accent;
+  const accentLightColor = theme.accentLight;
   const shapes = getShapes(previewColor).filter((shape) => isShapeEnabled(shape.type));
 
   const addShape = (type: ShapeType) => {

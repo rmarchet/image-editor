@@ -13,7 +13,7 @@ interface EditorRootProps {
 }
 
 export const EditorRoot = ({ cache, shadowRoot, portalHost }: EditorRootProps) => {
-  const system = createEditorSystem(getImageEditorConfig().colorPalette);
+  const system = createEditorSystem(getImageEditorConfig());
 
   return (
     <EnvironmentProvider value={() => shadowRoot}>
