@@ -237,9 +237,11 @@ function buildProjectFileName(fileName?: string): string {
   return `${baseName}${extension}`;
 }
 
-export async function saveProjectToFile(fileName?: string) {
+export async function serializeProject(): Promise<ProjectFileV1> {
   const engine = EditorEngine.getInstance();
-  if (!engine.initialized) return;
+  if (!engine.initialized) {
+    throw new Error('Editor not initialized');
+  }
 
   const { canvasWidth, canvasHeight, backgroundColor } = useEditorStore.getState();
   const elements = engine.getElements();
@@ -250,7 +252,7 @@ export async function saveProjectToFile(fileName?: string) {
     if (item) serialized.push(item);
   }
 
-  const payload: ProjectFileV1 = {
+  return {
     version: PROJECT_VERSION,
     savedAt: Date.now(),
     canvasWidth,
@@ -258,7 +260,36 @@ export async function saveProjectToFile(fileName?: string) {
     backgroundColor,
     elements: serialized,
   };
+}
 
+export async function deserializeProject(data: ProjectFileV1): Promise<void> {
+  const engine = EditorEngine.getInstance();
+  if (!engine.initialized) {
+    throw new Error('Editor not initialized');
+  }
+
+  const existingElements = engine.getElements();
+  for (const element of existingElements) {
+    engine.removeElement(element.id);
+  }
+
+  engine.setCanvasSize(data.canvasWidth, data.canvasHeight);
+  engine.updateCanvasBackground(data.backgroundColor);
+
+  for (const item of data.elements) {
+    const element = await deserializeElement(item);
+    if (!element) continue;
+
+    applyCommonElementProps(element, item);
+    engine.addElement(element);
+  }
+
+  engine.selection.deselectAll();
+  engine.syncElementsToStore();
+}
+
+export async function saveProjectToFile(fileName?: string) {
+  const payload = await serializeProject();
   const nextFileName = buildProjectFileName(fileName);
   downloadTextFile(JSON.stringify(payload, null, 2), nextFileName);
 }
@@ -281,29 +312,43 @@ export async function loadProjectFromFile(file: File): Promise<ProjectImageEleme
     (item): item is ProjectImageElement => item.type === 'image'
   );
 
+  await deserializeProject(parsed);
+
+  return projectImages;
+}
+
+export async function loadImageToEditor(source: string | Blob): Promise<void> {
   const engine = EditorEngine.getInstance();
   if (!engine.initialized) {
     throw new Error('Editor not initialized');
   }
 
-  const existingElements = engine.getElements();
-  for (const element of existingElements) {
-    engine.removeElement(element.id);
+  let imageUrl: string;
+  if (source instanceof Blob) {
+    imageUrl = URL.createObjectURL(source);
+  } else {
+    imageUrl = source;
   }
 
-  engine.setCanvasSize(parsed.canvasWidth, parsed.canvasHeight);
-  engine.updateCanvasBackground(parsed.backgroundColor);
+  try {
+    const imageElement = await ImageElement.fromURL(imageUrl);
 
-  for (const item of parsed.elements) {
-    const element = await deserializeElement(item);
-    if (!element) continue;
+    const existingElements = engine.getElements();
+    for (const element of existingElements) {
+      engine.removeElement(element.id);
+    }
 
-    applyCommonElementProps(element, item);
-    engine.addElement(element);
+    engine.setCanvasSize(imageElement.width, imageElement.height);
+
+    imageElement.x = 0;
+    imageElement.y = 0;
+
+    engine.addElement(imageElement);
+    engine.selection.deselectAll();
+    engine.syncElementsToStore();
+  } finally {
+    if (source instanceof Blob) {
+      URL.revokeObjectURL(imageUrl);
+    }
   }
-
-  engine.selection.deselectAll();
-  engine.syncElementsToStore();
-
-  return projectImages;
 }

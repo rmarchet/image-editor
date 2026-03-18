@@ -1,9 +1,18 @@
 import { createSystem, defaultConfig, defineConfig } from '@chakra-ui/react';
-import type { ImageEditorConfig } from '../embed/config';
+import type { NormalizedImageEditorConfig } from '../embed/config';
 
 const CSS_VAR_ROOT = ':host';
 
-export function createEditorSystem(imageEditorConfig: ImageEditorConfig = {}) {
+const DEFAULT_THEME = {
+  accent: '#7c3aed',
+  accentHover: '#6d28d9',
+  accentLight: '#9d87ff',
+  accentDark: '#6b21a8',
+};
+
+export function createEditorSystem(imageEditorConfig?: Partial<NormalizedImageEditorConfig>) {
+  const theme = imageEditorConfig?.theme ?? DEFAULT_THEME;
+
   const chakraConfig = defineConfig({
     cssVarsRoot: CSS_VAR_ROOT,
     conditions: {
@@ -41,10 +50,10 @@ export function createEditorSystem(imageEditorConfig: ImageEditorConfig = {}) {
             border: { value: '#e2e8f0' },
           },
           accent: {
-            DEFAULT: { value: imageEditorConfig.theme?.accent ?? '#7c3aed' },
-            hover: { value: imageEditorConfig.theme?.accentHover ?? '#6d28d9' },
-            light: { value: imageEditorConfig.theme?.accentLight ?? '#9d87ff' },
-            dark: { value: imageEditorConfig.theme?.accentDark ?? '#6b21a8' },
+            DEFAULT: { value: theme.accent ?? DEFAULT_THEME.accent },
+            hover: { value: theme.accentHover ?? DEFAULT_THEME.accentHover },
+            light: { value: theme.accentLight ?? DEFAULT_THEME.accentLight },
+            dark: { value: theme.accentDark ?? DEFAULT_THEME.accentDark },
           },
         },
       },

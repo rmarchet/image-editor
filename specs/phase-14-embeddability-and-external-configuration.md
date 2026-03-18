@@ -127,15 +127,20 @@ Important constraints:
 
 The config object starts small, but it must be normalized at the boundary so UI and engine code consume one consistent runtime shape.
 
-Initial config surface for the first tranche:
+Config surface:
 
 - `fonts`
   - `defaultFamily`
   - `families`
-- `colorPalette`
+- `theme`
   - `accent`
   - `accentHover`
   - `accentLight`
+  - `accentDark`
+  - `sidebarColor`
+  - `sidebarActiveColor`
+  - `sidebarBackground`
+- `colorPalette`
   - `backgroundSwatches`
   - `drawSwatches`
 - `enabledTools`
@@ -144,6 +149,8 @@ Initial config surface for the first tranche:
   - `width`
   - `height`
   - `backgroundColor`
+- `initialProject` — `ProjectFileV1 | string` (JSON object or JSON string)
+- `initialImage` — `string | Blob` (URL, data URL, or Blob)
 
 Rules:
 
@@ -158,17 +165,40 @@ Rules:
 
 This part prepares the editor to cooperate with the outer application rather than hijacking global page behavior.
 
-Design notes:
+### Config-based Initialization
 
-- global keyboard listeners must become focus-aware
-- canvas interactions should move focus into the embedded editor root
-- portalled UI such as menus and tooltips must stay inside the shadow root
-- future host-owned actions should be exposed through the handle rather than through direct store access
+The host can pass initial content via config:
 
-Not yet completed in the first tranche:
+- `initialProject` — A `ProjectFileV1` object or JSON string containing project data. The editor will deserialize and restore the full project state on mount.
+- `initialImage` — A URL, data URL, or `Blob` representing a single image. The editor will clear any existing content, auto-resize the canvas to match image dimensions, and display the image.
 
-- project/image initialization payloads
-- full load methods on the public handle
+If both are provided, `initialProject` takes precedence.
+
+### Imperative Handle Methods
+
+The `ImageEditorHandle` returned by `mount()` exposes:
+
+- `destroy()` — Unmount the editor and clean up all resources
+- `focus()` — Focus the editor canvas
+- `getConfig()` — Return the current normalized configuration
+- `loadProject(project: ProjectFileV1 | string): Promise<void>` — Clear current session and load project data
+- `loadImage(source: string | Blob): Promise<void>` — Clear current session and load a single image (auto-resizes canvas)
+- `getProjectData(): Promise<ProjectFileV1>` — Serialize current session to project data (no file download)
+
+### Implementation Details
+
+- All imperative methods wait for engine initialization before executing
+- `loadProject` accepts both `ProjectFileV1` objects and JSON strings
+- `loadImage` accepts URLs, data URLs, and Blob objects; Blob is converted to object URL internally
+- Initial content is applied asynchronously after mount completes
+- Errors during initial content loading are logged but do not block the editor
+
+### Design Notes
+
+- Global keyboard listeners are focus-aware
+- Canvas interactions move focus into the embedded editor root
+- Portalled UI such as menus and tooltips stay inside the shadow root
+- Host-owned actions are exposed through the handle rather than through direct store access
 
 ---
 
@@ -207,7 +237,7 @@ Core files for the phase:
 | File | Responsibility |
 |------|----------------|
 | `src/index.ts` | Public runtime entry exports |
-| `src/embed/mountImageEditor.tsx` | Mount API, Shadow DOM bootstrap, single-instance lifecycle |
+| `src/embed/mountImageEditor.tsx` | Mount API, Shadow DOM bootstrap, single-instance lifecycle, imperative handle |
 | `src/embed/config.ts` | Config types, defaults, normalization, feature gating helpers |
 | `src/embed/domEnvironment.ts` | Embedded DOM/focus environment helpers |
 | `src/app/EditorRoot.tsx` | Chakra/Emotion/Environment wrapper for embedded rendering |
@@ -216,6 +246,7 @@ Core files for the phase:
 | `src/main.tsx` | Local app bootstrap via the same public mount API |
 | `src/stores/resetStores.ts` | Centralized runtime reset for mount/destroy |
 | `src/utils/shortcuts.ts` | Focus-aware embedded keyboard handling |
+| `src/utils/projectFile.ts` | Project serialization/deserialization, image loading |
 | `src/engine/core/Viewport.ts` | Focus-aware pan/space keyboard handling |
 | `src/engine/tools/ToolManager.ts` | Tool gating and keyboard scoping |
 
@@ -223,14 +254,27 @@ Core files for the phase:
 
 ## Verification Checklist
 
+### 14.1 - Embedding Shell
 1. Mount the editor into a plain host `<div>` and confirm the UI renders correctly.
 2. Confirm Chakra/Emotion styles are inserted inside the Shadow DOM instead of the document head.
 3. Click inside the editor canvas and verify keyboard shortcuts become active.
 4. Focus outside the editor and verify editor shortcuts no longer hijack the page.
-5. Disable `crop`, `draw`, `text`, or `shape` from config and verify the related UI/actions disappear or are ignored.
-6. Disable a subset of shapes and verify the Shapes panel and shape tool respect the whitelist.
-7. Pass a different default text font family and verify newly created text uses it.
-8. Destroy the mounted editor and remount it; confirm the new session starts from clean state.
+5. Destroy the mounted editor and remount it; confirm the new session starts from clean state.
+
+### 14.2 - Config Propagation
+6. Disable `crop`, `draw`, `text`, or `shape` from config and verify the related UI/actions disappear or are ignored.
+7. Disable a subset of shapes and verify the Shapes panel and shape tool respect the whitelist.
+8. Pass a different default text font family and verify newly created text uses it.
+9. Pass custom theme colors and verify accent colors are applied.
+
+### 14.3 - Host Initialization
+10. Mount with `initialProject` containing 2+ elements; editor opens with those elements.
+11. Mount with `initialImage` (URL); editor opens with single image, canvas sized to image.
+12. Mount with `initialImage` (Blob); same behavior as URL.
+13. Call `handle.loadProject(...)` after mount; session resets and project loads.
+14. Call `handle.loadImage(...)` after mount; session resets and image loads.
+15. Call `handle.getProjectData()`; returns valid `ProjectFileV1` matching current session.
+16. Provide both `initialProject` and `initialImage`; project takes precedence.
 
 ---
 
@@ -238,4 +282,13 @@ Core files for the phase:
 
 Phase 14 establishes the runtime boundary the editor needs in order to behave as an embeddable component instead of only as a standalone page app.
 
-The first implementation tranche delivers the shell required for that transition: public mount API, Shadow DOM isolation, normalized config, and controlled lifecycle. Later sub-phases extend that boundary with host initialization, save/export callback handoff, and package-level integration support.
+Completed sub-phases:
+
+- **14.1** — Public mount API, Shadow DOM isolation, normalized config, controlled lifecycle
+- **14.2** — Runtime config propagation for tools, shapes, theme, and color palette
+- **14.3** — Host initialization with `initialProject`/`initialImage`, imperative methods for loading content and serializing projects
+
+Remaining sub-phases:
+
+- **14.4** — Save/export callback handoff (`onSaveProject`, `onSave`)
+- **14.5** — Packaging and integration documentation

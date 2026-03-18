@@ -8,6 +8,7 @@ export type {
   ImageEditorThemeConfig,
   NormalizedImageEditorConfig,
 } from './embed/config';
+export type { ProjectFileV1 } from './types';
 
 export default {
   mount,

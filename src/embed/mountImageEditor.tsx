@@ -7,11 +7,16 @@ import { resetImageEditorConfig, setImageEditorConfig, getImageEditorConfig } fr
 import { clearEditorDomEnvironment, focusEditorMountRoot, queryEditorElement, setEditorDomEnvironment } from './domEnvironment';
 import { resetEditorRuntimeState } from '../stores/resetStores';
 import { EditorEngine } from '../engine/core/EditorEngine';
+import { serializeProject, deserializeProject, loadImageToEditor } from '../utils/projectFile';
+import type { ProjectFileV1 } from '../types';
 
 export interface ImageEditorHandle {
   destroy: () => void;
   focus: () => void;
   getConfig: () => NormalizedImageEditorConfig;
+  loadProject: (project: ProjectFileV1 | string) => Promise<void>;
+  loadImage: (source: string | Blob) => Promise<void>;
+  getProjectData: () => Promise<ProjectFileV1>;
 }
 
 interface MountedEditor {
@@ -42,6 +47,54 @@ function createShadowMount(hostElement: HTMLElement) {
   shadowRoot.append(appHost, portalHost);
 
   return { shadowRoot, appHost, portalHost };
+}
+
+function parseProjectInput(input: ProjectFileV1 | string): ProjectFileV1 {
+  if (typeof input === 'string') {
+    try {
+      return JSON.parse(input) as ProjectFileV1;
+    } catch {
+      throw new Error('Invalid project JSON string');
+    }
+  }
+  return input;
+}
+
+function waitForEngineReady(): Promise<void> {
+  return new Promise((resolve) => {
+    const check = () => {
+      const engine = EditorEngine.getInstance();
+      if (engine.initialized) {
+        resolve();
+      } else {
+        requestAnimationFrame(check);
+      }
+    };
+    requestAnimationFrame(check);
+  });
+}
+
+async function applyInitialContent(): Promise<void> {
+  const config = getImageEditorConfig();
+
+  await waitForEngineReady();
+
+  if (config.initialProject) {
+    try {
+      await deserializeProject(config.initialProject);
+    } catch (error) {
+      console.error('[ImageEditor] Failed to load initial project:', error);
+    }
+    return;
+  }
+
+  if (config.initialImage) {
+    try {
+      await loadImageToEditor(config.initialImage);
+    } catch (error) {
+      console.error('[ImageEditor] Failed to load initial image:', error);
+    }
+  }
 }
 
 export function mount(
@@ -80,7 +133,9 @@ export function mount(
     shadowRoot,
   };
 
-  return {
+  applyInitialContent();
+
+  const handle: ImageEditorHandle = {
     destroy() {
       if (!mountedEditor || mountedEditor.hostElement !== hostElement) {
         return;
@@ -109,5 +164,32 @@ export function mount(
     getConfig() {
       return getImageEditorConfig();
     },
+    async loadProject(project: ProjectFileV1 | string) {
+      if (!mountedEditor) {
+        throw new Error('Editor has been destroyed');
+      }
+
+      await waitForEngineReady();
+      const data = parseProjectInput(project);
+      await deserializeProject(data);
+    },
+    async loadImage(source: string | Blob) {
+      if (!mountedEditor) {
+        throw new Error('Editor has been destroyed');
+      }
+
+      await waitForEngineReady();
+      await loadImageToEditor(source);
+    },
+    async getProjectData() {
+      if (!mountedEditor) {
+        throw new Error('Editor has been destroyed');
+      }
+
+      await waitForEngineReady();
+      return await serializeProject();
+    },
   };
+
+  return handle;
 }

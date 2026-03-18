@@ -1,4 +1,4 @@
-import type { ShapeType, SidebarPanel, ToolType } from '../types';
+import type { ProjectFileV1, ShapeType, SidebarPanel, ToolType } from '../types';
 
 export const ALL_EDITOR_TOOLS: ToolType[] = ['select', 'crop', 'draw', 'text', 'shape'];
 
@@ -87,6 +87,8 @@ export interface ImageEditorConfig {
   enabledTools?: ToolType[];
   enabledShapes?: ShapeType[];
   canvas?: ImageEditorCanvasConfig;
+  initialProject?: ProjectFileV1 | string;
+  initialImage?: string | Blob;
 }
 
 export interface NormalizedImageEditorConfig {
@@ -114,6 +116,8 @@ export interface NormalizedImageEditorConfig {
     height: number;
     backgroundColor: string;
   };
+  initialProject: ProjectFileV1 | null;
+  initialImage: string | Blob | null;
 }
 
 const DEFAULT_CONFIG: NormalizedImageEditorConfig = {
@@ -141,6 +145,8 @@ const DEFAULT_CONFIG: NormalizedImageEditorConfig = {
     height: 800,
     backgroundColor: '#ffffff',
   },
+  initialProject: null,
+  initialImage: null,
 };
 
 let currentConfig: NormalizedImageEditorConfig = { ...DEFAULT_CONFIG };
@@ -195,6 +201,42 @@ function normalizeColorList(values: string[] | undefined, fallback: string[]) {
   return normalized.length > 0 ? normalized : [...fallback];
 }
 
+function isValidProjectFileV1(value: unknown): value is ProjectFileV1 {
+  if (typeof value !== 'object' || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  return (
+    obj.version === 1 &&
+    typeof obj.canvasWidth === 'number' &&
+    typeof obj.canvasHeight === 'number' &&
+    typeof obj.backgroundColor === 'string' &&
+    Array.isArray(obj.elements)
+  );
+}
+
+function normalizeInitialProject(
+  value: ProjectFileV1 | string | undefined
+): ProjectFileV1 | null {
+  if (!value) return null;
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return isValidProjectFileV1(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return isValidProjectFileV1(value) ? value : null;
+}
+
+function normalizeInitialImage(value: string | Blob | undefined): string | Blob | null {
+  if (!value) return null;
+  if (value instanceof Blob) return value;
+  if (typeof value === 'string' && value.trim()) return value.trim();
+  return null;
+}
+
 export function normalizeImageEditorConfig(
   config?: ImageEditorConfig
 ): NormalizedImageEditorConfig {
@@ -227,6 +269,8 @@ export function normalizeImageEditorConfig(
       backgroundColor:
         config?.canvas?.backgroundColor?.trim() || DEFAULT_CONFIG.canvas.backgroundColor,
     },
+    initialProject: normalizeInitialProject(config?.initialProject),
+    initialImage: normalizeInitialImage(config?.initialImage),
   };
 }
 
