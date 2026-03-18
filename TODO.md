@@ -67,8 +67,9 @@ The new embedding mechanism also provides parameters to be passed to the Editor.
 #### 14.3 initialProject / initialImage [DONE ✅️]
 Allow to specify the starting content of a working session. It can either be the JSON of a project or the URL / blob of an image.
 
-#### 14.4 onSave / onSaveProject / onError callbacks [TO-DO]
+#### 14.4 onSave / onSaveProject / onError callbacks [DONE ✅️]
 Configurable collabacs to allow the hosting application to receive the bitmap or the vector result of an export action or the JSON of the project so it's saved out of the application. Also implement the onError callback to notify possible errors/warnings to the hosting application.
+Also add a config options to allow Save and enable/disable different file formats.
 
 ### 15. Fonts management [TO-DO]
 Must extend the Text editing experience with the choice of custom web fonts (configurable) and the line-heigh tool.
@@ -99,12 +100,13 @@ Allows to copy and paste images and text elements to the artboard. Vector elemen
 Use react-intl to introduce a multi-language environment. This way it's possible to have the Image Editor with labels translated in different languages.
 
 ### 24. Refactoring [TO-DO]
-Reorganize the components structure in sub folder so each component has its TSX file, its child components (if used only in one place) and its unit test files.
-- Move reusable UI components to a dedicated folder.
+Reorganize the components structure in sub folder so each component has its TSX file, its child components (if used only in one place), its specific types (props...) and its unit test files.
+- Move reusable UI components to a dedicated "ui" folder.
 - Currently some components share the same TSX file. Each individual component must have its own TSX file.
 - Rename BottomBar.tsx to ZoomBar.tsx
 - Split big files into smaller ones
-- Separate business logic from configuration and presentation components
+- Separate business logic from configuration and presentation components, BL must go to "%component_name%.utils.ts" files
+- Move shared type in the /src/types folder, divided in separate files considering their scope
 
 ### 25. Unit tests [TO-DO]
 Install a unit test library (Jest / Vitest) and a library to test React components (RTL) and cover the application with enough unit tests. Every component must have its own test file.

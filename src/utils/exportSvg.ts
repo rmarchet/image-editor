@@ -445,12 +445,15 @@ function serializeElement(el: BaseElement): string {
 }
 
 // ---------------------------------------------------------------------------
-// Main export function
+// Main export functions
 // ---------------------------------------------------------------------------
 
-export function exportSvg(filename = 'artboard') {
+/**
+ * Generates the SVG content as a Blob.
+ */
+export function generateSvgBlob(): Blob | null {
   const engine = EditorEngine.getInstance();
-  if (!engine.initialized) return;
+  if (!engine.initialized) return null;
 
   const { canvasWidth, canvasHeight, backgroundColor } = useEditorStore.getState();
   const elements = engine.getElements();
@@ -468,7 +471,13 @@ export function exportSvg(filename = 'artboard') {
   parts.push('</svg>');
 
   const svgContent = parts.join('\n');
-  const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+  return new Blob([svgContent], { type: 'image/svg+xml' });
+}
+
+export function exportSvg(filename = 'artboard') {
+  const blob = generateSvgBlob();
+  if (!blob) return;
+
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.download = `${filename}.svg`;

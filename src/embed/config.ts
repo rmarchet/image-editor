@@ -2,6 +2,31 @@ import type { ProjectFileV1, ShapeType, SidebarPanel, ToolType } from '../types'
 
 export const ALL_EDITOR_TOOLS: ToolType[] = ['select', 'crop', 'draw', 'text', 'shape'];
 
+export type ExportFormat = 'png' | 'jpeg' | 'svg' | 'pdf';
+
+export interface ExportPayload {
+  format: ExportFormat;
+  data: Blob;
+  filename: string;
+  mimeType: string;
+}
+
+export interface ProjectPayload {
+  data: ProjectFileV1;
+  filename: string;
+}
+
+export interface EditorErrorEvent {
+  type: 'error' | 'warning';
+  code: string;
+  message: string;
+  context?: Record<string, unknown>;
+}
+
+export type OnSaveCallback = (payload: ExportPayload) => void | boolean | Promise<void | boolean>;
+export type OnSaveProjectCallback = (payload: ProjectPayload) => void | boolean | Promise<void | boolean>;
+export type OnErrorCallback = (event: EditorErrorEvent) => void;
+
 export const ALL_EDITOR_SHAPES: ShapeType[] = [
   'rectangle',
   'ellipse',
@@ -80,6 +105,19 @@ export interface ImageEditorCanvasConfig {
   backgroundColor?: string;
 }
 
+export type SaveFormat = 'png' | 'jpeg' | 'svg' | 'pdf' | 'ieproj';
+
+export const ALL_SAVE_FORMATS: SaveFormat[] = ['png', 'jpeg', 'svg', 'pdf', 'ieproj'];
+
+export interface ImageEditorExportConfig {
+  /** Allowed export formats. Defaults to all formats. */
+  allowFormats?: SaveFormat[];
+  /** Show the "Export As..." modal. Defaults to true. */
+  allowExportAs?: boolean;
+  /** Show the Save/Export button in toolbar. Defaults to true. */
+  allowSave?: boolean;
+}
+
 export interface ImageEditorConfig {
   fonts?: ImageEditorFontsConfig;
   theme?: ImageEditorThemeConfig;
@@ -87,8 +125,12 @@ export interface ImageEditorConfig {
   enabledTools?: ToolType[];
   enabledShapes?: ShapeType[];
   canvas?: ImageEditorCanvasConfig;
+  export?: ImageEditorExportConfig;
   initialProject?: ProjectFileV1 | string;
   initialImage?: string | Blob;
+  onSave?: OnSaveCallback;
+  onSaveProject?: OnSaveProjectCallback;
+  onError?: OnErrorCallback;
 }
 
 export interface NormalizedImageEditorConfig {
@@ -118,6 +160,11 @@ export interface NormalizedImageEditorConfig {
   };
   initialProject: ProjectFileV1 | null;
   initialImage: string | Blob | null;
+  export: {
+    allowFormats: SaveFormat[];
+    allowExportAs: boolean;
+    allowSave: boolean;
+  };
 }
 
 const DEFAULT_CONFIG: NormalizedImageEditorConfig = {
@@ -147,9 +194,26 @@ const DEFAULT_CONFIG: NormalizedImageEditorConfig = {
   },
   initialProject: null,
   initialImage: null,
+  export: {
+    allowFormats: [...ALL_SAVE_FORMATS],
+    allowExportAs: true,
+    allowSave: true,
+  },
 };
 
 let currentConfig: NormalizedImageEditorConfig = { ...DEFAULT_CONFIG };
+
+interface EditorCallbacks {
+  onSave: OnSaveCallback | null;
+  onSaveProject: OnSaveProjectCallback | null;
+  onError: OnErrorCallback | null;
+}
+
+let currentCallbacks: EditorCallbacks = {
+  onSave: null,
+  onSaveProject: null,
+  onError: null,
+};
 
 function uniqueItems<T>(values: T[]) {
   return Array.from(new Set(values));
@@ -237,6 +301,27 @@ function normalizeInitialImage(value: string | Blob | undefined): string | Blob 
   return null;
 }
 
+function normalizeExportConfig(config?: ImageEditorExportConfig) {
+  const allowFormats = config?.allowFormats;
+  let formats: SaveFormat[];
+
+  if (!allowFormats || allowFormats.length === 0) {
+    formats = [...DEFAULT_CONFIG.export.allowFormats];
+  } else {
+    // Filter to valid formats only, preserving order
+    formats = ALL_SAVE_FORMATS.filter((f) => allowFormats.includes(f));
+    if (formats.length === 0) {
+      formats = [...DEFAULT_CONFIG.export.allowFormats];
+    }
+  }
+
+  return {
+    allowFormats: formats,
+    allowExportAs: config?.allowExportAs ?? DEFAULT_CONFIG.export.allowExportAs,
+    allowSave: config?.allowSave ?? DEFAULT_CONFIG.export.allowSave,
+  };
+}
+
 export function normalizeImageEditorConfig(
   config?: ImageEditorConfig
 ): NormalizedImageEditorConfig {
@@ -271,15 +356,26 @@ export function normalizeImageEditorConfig(
     },
     initialProject: normalizeInitialProject(config?.initialProject),
     initialImage: normalizeInitialImage(config?.initialImage),
+    export: normalizeExportConfig(config?.export),
   };
 }
 
 export function setImageEditorConfig(config?: ImageEditorConfig) {
   currentConfig = normalizeImageEditorConfig(config);
+  currentCallbacks = {
+    onSave: config?.onSave ?? null,
+    onSaveProject: config?.onSaveProject ?? null,
+    onError: config?.onError ?? null,
+  };
 }
 
 export function resetImageEditorConfig() {
   currentConfig = normalizeImageEditorConfig();
+  currentCallbacks = {
+    onSave: null,
+    onSaveProject: null,
+    onError: null,
+  };
 }
 
 export function getImageEditorConfig() {
@@ -333,4 +429,40 @@ export function getSidebarActiveColor() {
 
 export function getTheme() {
   return currentConfig.theme;
+}
+
+// ---------------------------------------------------------------------------
+// Callback Getters
+// ---------------------------------------------------------------------------
+
+export function getOnSaveCallback() {
+  return currentCallbacks.onSave;
+}
+
+export function getOnSaveProjectCallback() {
+  return currentCallbacks.onSaveProject;
+}
+
+export function getOnErrorCallback() {
+  return currentCallbacks.onError;
+}
+
+// ---------------------------------------------------------------------------
+// Export Config Getters
+// ---------------------------------------------------------------------------
+
+export function getExportConfig() {
+  return currentConfig.export;
+}
+
+export function isFormatAllowed(format: SaveFormat) {
+  return currentConfig.export.allowFormats.includes(format);
+}
+
+export function isExportAsAllowed() {
+  return currentConfig.export.allowExportAs;
+}
+
+export function isSaveAllowed() {
+  return currentConfig.export.allowSave;
 }

@@ -42,7 +42,21 @@
           // width: 800,
           // height: 600,
           // backgroundColor: '#ffffff',
-        }
+        },
+        export: {
+          allowSave: true,
+          // allowFormats: ['png', 'ieproj'],
+          // allowExportAs: false,
+        },
+        onError: (error) => {
+          console.error('---ImageEditor error:', error);
+        },
+        // onSave: (payload) => {
+        //   console.log('---Save payload:', payload);
+        // },
+        // onSaveProject: (payload) => {
+        //   console.log('---Save project payload:', payload);
+        // },
       });
     </script>
   </body>

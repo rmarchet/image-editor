@@ -151,6 +151,13 @@ Config surface:
   - `backgroundColor`
 - `initialProject` — `ProjectFileV1 | string` (JSON object or JSON string)
 - `initialImage` — `string | Blob` (URL, data URL, or Blob)
+- `onSave` — Callback for image exports (PNG, JPEG, SVG, PDF)
+- `onSaveProject` — Callback for project saves
+- `onError` — Callback for errors and warnings
+- `export`
+  - `allowFormats` — Array of allowed export formats (`png`, `jpeg`, `svg`, `pdf`, `ieproj`)
+  - `allowExportAs` — Whether to show the "Export As…" dialog option
+  - `allowSave` — Whether to show the Save button and related UI
 
 Rules:
 
@@ -204,16 +211,56 @@ The `ImageEditorHandle` returned by `mount()` exposes:
 
 ## 4. Save/Export Callback Handoff
 
-Save and export are part of Phase 14, but not part of the first implementation cut.
+Save and export callbacks allow the host application to intercept save/export actions and handle persistence.
 
-Planned architecture:
+### Callback Types
 
-- split serialization/generation from browser download
-- treat download as an adapter, not as the core export path
-- hand editable project payloads to `onSaveProject`
-- hand rendered export payloads to `onSave`
+```ts
+interface ExportPayload {
+  format: 'png' | 'jpeg' | 'svg' | 'pdf';
+  data: Blob;
+  filename: string;
+  mimeType: string;
+}
 
-This keeps embedded usage compatible with host-owned APIs, server uploads, custom dialogs, and application-specific persistence rules.
+interface ProjectPayload {
+  data: ProjectFileV1;
+  filename: string;
+}
+
+interface EditorErrorEvent {
+  type: 'error' | 'warning';
+  code: string;
+  message: string;
+  context?: Record<string, unknown>;
+}
+```
+
+### Config Options
+
+- `onSave?: (payload: ExportPayload) => void | boolean | Promise<void | boolean>` — Called when user exports an image
+- `onSaveProject?: (payload: ProjectPayload) => void | boolean | Promise<void | boolean>` — Called when user saves the project
+- `onError?: (event: EditorErrorEvent) => void` — Called on errors or warnings
+
+### Callback Return Semantics
+
+- `void` or `true` — Host handled the action, skip default browser download
+- `false` — Host processed the action AND trigger default download as well
+
+### Error Codes
+
+- `PROJECT_LOAD_FAILED` — Failed to load/deserialize project
+- `PROJECT_SERIALIZE_FAILED` — Failed to serialize project
+- `IMAGE_LOAD_FAILED` — Failed to load image
+- `EXPORT_FAILED` — Failed to generate export
+- `CALLBACK_ERROR` — Host callback threw an error
+
+### Implementation Details
+
+- Export utilities refactored to return `Blob` instead of triggering download directly
+- `saveDispatcher.ts` routes all save/export actions through callbacks when configured
+- `errorReporter.ts` provides `reportError()` and `reportWarning()` helpers
+- Errors are always logged to console in addition to calling `onError`
 
 ---
 
@@ -247,6 +294,11 @@ Core files for the phase:
 | `src/stores/resetStores.ts` | Centralized runtime reset for mount/destroy |
 | `src/utils/shortcuts.ts` | Focus-aware embedded keyboard handling |
 | `src/utils/projectFile.ts` | Project serialization/deserialization, image loading |
+| `src/utils/export.ts` | Raster export with blob generation |
+| `src/utils/exportSvg.ts` | SVG export with blob generation |
+| `src/utils/exportPdf.ts` | PDF export with blob generation |
+| `src/embed/saveDispatcher.ts` | Unified save/export dispatch with callback routing |
+| `src/embed/errorReporter.ts` | Error/warning reporting infrastructure |
 | `src/engine/core/Viewport.ts` | Focus-aware pan/space keyboard handling |
 | `src/engine/tools/ToolManager.ts` | Tool gating and keyboard scoping |
 
@@ -276,6 +328,18 @@ Core files for the phase:
 15. Call `handle.getProjectData()`; returns valid `ProjectFileV1` matching current session.
 16. Provide both `initialProject` and `initialImage`; project takes precedence.
 
+### 14.4 - Save/Export Callbacks
+17. Mount without callbacks; export triggers browser download (existing behavior).
+18. Mount with `onSave`; export calls callback with `ExportPayload`, no download.
+19. Mount with `onSave` returning `false`; callback called AND download triggered.
+20. Mount with `onSaveProject`; project save calls callback with `ProjectPayload`.
+21. Invalid project load triggers `onError` with `PROJECT_LOAD_FAILED`.
+22. Image load failure triggers `onError` with `IMAGE_LOAD_FAILED`.
+23. All export formats (PNG, JPEG, SVG, PDF, project) work correctly with callbacks.
+24. Mount with `export.allowFormats: ['png', 'jpeg']`; only PNG and JPEG appear in menus.
+25. Mount with `export.allowExportAs: false`; "Export As…" option hidden from dropdown.
+26. Mount with `export.allowSave: false`; Save button and related UI hidden entirely.
+
 ---
 
 ## Outcome
@@ -287,8 +351,8 @@ Completed sub-phases:
 - **14.1** — Public mount API, Shadow DOM isolation, normalized config, controlled lifecycle
 - **14.2** — Runtime config propagation for tools, shapes, theme, and color palette
 - **14.3** — Host initialization with `initialProject`/`initialImage`, imperative methods for loading content and serializing projects
+- **14.4** — Save/export callback handoff (`onSave`, `onSaveProject`, `onError`)
 
 Remaining sub-phases:
 
-- **14.4** — Save/export callback handoff (`onSaveProject`, `onSave`)
 - **14.5** — Packaging and integration documentation

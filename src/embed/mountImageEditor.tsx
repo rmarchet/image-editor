@@ -8,6 +8,7 @@ import { clearEditorDomEnvironment, focusEditorMountRoot, queryEditorElement, se
 import { resetEditorRuntimeState } from '../stores/resetStores';
 import { EditorEngine } from '../engine/core/EditorEngine';
 import { serializeProject, deserializeProject, loadImageToEditor } from '../utils/projectFile';
+import { reportError } from './errorReporter';
 import type { ProjectFileV1 } from '../types';
 
 export interface ImageEditorHandle {
@@ -83,7 +84,9 @@ async function applyInitialContent(): Promise<void> {
     try {
       await deserializeProject(config.initialProject);
     } catch (error) {
-      console.error('[ImageEditor] Failed to load initial project:', error);
+      reportError('PROJECT_LOAD_FAILED', 'Failed to load initial project', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
     return;
   }
@@ -92,7 +95,9 @@ async function applyInitialContent(): Promise<void> {
     try {
       await loadImageToEditor(config.initialImage);
     } catch (error) {
-      console.error('[ImageEditor] Failed to load initial image:', error);
+      reportError('IMAGE_LOAD_FAILED', 'Failed to load initial image', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 }

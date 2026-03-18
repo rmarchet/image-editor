@@ -1,14 +1,13 @@
 import { Box, Flex, Text } from '@chakra-ui/react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
-import { exportCanvas } from '../../utils/export';
-import { exportSvg } from '../../utils/exportSvg';
-import { exportPdf } from '../../utils/exportPdf';
-import { saveProjectToFile } from '../../utils/projectFile';
+import { dispatchSave, dispatchSaveProject } from '../../embed/saveDispatcher';
+import type { ExportFormat } from '../../embed/config';
+import { isFormatAllowed } from '../../embed/config';
 
-type ExportFormat = 'project' | 'png' | 'jpeg' | 'svg' | 'pdf';
+type DialogExportFormat = 'project' | ExportFormat;
 
-const FORMAT_OPTIONS: { value: ExportFormat; label: string }[] = [
+const FORMAT_OPTIONS: { value: DialogExportFormat; label: string }[] = [
   { value: 'project', label: 'Project (.ieproj)' },
   { value: 'png', label: 'PNG Image' },
   { value: 'jpeg', label: 'JPEG Image' },
@@ -32,39 +31,38 @@ export const SaveExportDialog = () => {
   const open = useEditorStore((s) => s.saveDialogOpen);
   const setSaveDialogOpen = useEditorStore((s) => s.setSaveDialogOpen);
 
+  // Filter format options based on config
+  const filteredFormats = useMemo(() => {
+    return FORMAT_OPTIONS.filter((opt) => {
+      if (opt.value === 'project') return isFormatAllowed('ieproj');
+      return isFormatAllowed(opt.value);
+    });
+  }, []);
+
+  const defaultFormat = filteredFormats[0]?.value ?? 'png';
+
   const [filename, setFilename] = useState('artboard');
-  const [format, setFormat] = useState<ExportFormat>('png');
+  const [format, setFormat] = useState<DialogExportFormat>(defaultFormat);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
       setFilename('artboard');
-      setFormat('png');
+      setFormat(defaultFormat);
       setTimeout(() => inputRef.current?.select(), 50);
     }
-  }, [open]);
+  }, [open, defaultFormat]);
 
   if (!open) return null;
 
   const handleConfirm = async () => {
     setSaveDialogOpen(false);
     const name = filename.trim() || 'artboard';
-    switch (format) {
-      case 'project':
-        await saveProjectToFile(name);
-        break;
-      case 'png':
-        exportCanvas('png', 1, name);
-        break;
-      case 'jpeg':
-        exportCanvas('jpeg', 0.9, name);
-        break;
-      case 'svg':
-        exportSvg(name);
-        break;
-      case 'pdf':
-        exportPdf(name);
-        break;
+
+    if (format === 'project') {
+      await dispatchSaveProject(name);
+    } else {
+      await dispatchSave(format, name);
     }
   };
 
@@ -120,10 +118,10 @@ export const SaveExportDialog = () => {
           </Text>
           <select
             value={format}
-            onChange={(e) => setFormat(e.target.value as ExportFormat)}
+            onChange={(e) => setFormat(e.target.value as DialogExportFormat)}
             style={{ ...fieldStyle, cursor: 'pointer' }}
           >
-            {FORMAT_OPTIONS.map(({ value, label }) => (
+            {filteredFormats.map(({ value, label }) => (
               <option key={value} value={value}>
                 {label}
               </option>

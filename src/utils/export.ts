@@ -48,19 +48,45 @@ export function captureArtboardCanvas(): HTMLCanvasElement | null {
   return canvas;
 }
 
-export function exportCanvas(
+/**
+ * Captures the artboard and returns it as a Blob.
+ */
+export function captureArtboardBlob(
+  format: 'png' | 'jpeg' = 'png',
+  quality = 1
+): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    const canvas = captureArtboardCanvas();
+    if (!canvas) {
+      resolve(null);
+      return;
+    }
+
+    const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+    canvas.toBlob(
+      (blob) => resolve(blob),
+      mimeType,
+      quality
+    );
+  });
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = url;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function exportCanvas(
   format: 'png' | 'jpeg' = 'png',
   quality = 1,
   filename = 'artboard',
 ) {
-  const canvas = captureArtboardCanvas();
-  if (!canvas) return;
+  const blob = await captureArtboardBlob(format, quality);
+  if (!blob) return;
 
-  const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-  const dataUrl = canvas.toDataURL(mimeType, quality);
-
-  const link = document.createElement('a');
-  link.download = `${filename}.${format}`;
-  link.href = dataUrl;
-  link.click();
+  downloadBlob(blob, `${filename}.${format}`);
 }

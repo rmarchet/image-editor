@@ -1,8 +1,8 @@
 import { Box, Flex, Text } from '@chakra-ui/react';
-import { useRef, useState, useEffect, type ReactNode } from 'react';
+import { useRef, useState, useEffect, useMemo, type ReactNode } from 'react';
 import { BiSave, BiChevronDown, BiImage, BiFile, BiCode } from 'react-icons/bi';
 import { useEditorStore } from '../../stores/editorStore';
-import { getTheme } from '../../embed/config';
+import { getTheme, isFormatAllowed, isExportAsAllowed } from '../../embed/config';
 
 interface MenuItem {
   label: string;
@@ -54,13 +54,54 @@ export const SplitButton = ({
     return () => ownerDocument.removeEventListener('mousedown', handleClick);
   }, [open]);
 
-  const menuItems: MenuItem[] = [
-    { label: 'Export PNG', icon: <BiImage size={14} />, onClick: () => { setOpen(false); onExportPng(); } },
-    { label: 'Export JPEG', icon: <BiImage size={14} />, onClick: () => { setOpen(false); onExportJpeg(); } },
-    { label: 'Export SVG', icon: <BiCode size={14} />, onClick: () => { setOpen(false); onExportSvg(); } },
-    { label: 'Export PDF', icon: <BiFile size={14} />, onClick: () => { setOpen(false); onExportPdf(); } },
-    { label: 'Export As…', icon: <BiSave size={14} />, onClick: () => { setOpen(false); setSaveDialogOpen(true); } },
-  ];
+  const menuItems: MenuItem[] = useMemo(() => {
+    const items: MenuItem[] = [];
+    if (isFormatAllowed('png')) {
+      items.push({ label: 'Export PNG', icon: <BiImage size={14} />, onClick: () => { setOpen(false); onExportPng(); } });
+    }
+    if (isFormatAllowed('jpeg')) {
+      items.push({ label: 'Export JPEG', icon: <BiImage size={14} />, onClick: () => { setOpen(false); onExportJpeg(); } });
+    }
+    if (isFormatAllowed('svg')) {
+      items.push({ label: 'Export SVG', icon: <BiCode size={14} />, onClick: () => { setOpen(false); onExportSvg(); } });
+    }
+    if (isFormatAllowed('pdf')) {
+      items.push({ label: 'Export PDF', icon: <BiFile size={14} />, onClick: () => { setOpen(false); onExportPdf(); } });
+    }
+    if (isExportAsAllowed()) {
+      items.push({ label: 'Export As…', icon: <BiSave size={14} />, onClick: () => { setOpen(false); setSaveDialogOpen(true); } });
+    }
+    return items;
+  }, [onExportPng, onExportJpeg, onExportSvg, onExportPdf, setSaveDialogOpen]);
+
+  const showExportAsItem = isExportAsAllowed();
+
+  // If no menu items, render a simple button without dropdown
+  if (menuItems.length === 0) {
+    return (
+      <Box
+        as="button"
+        display="flex"
+        alignItems="center"
+        gap={1.5}
+        px={3}
+        py={1.5}
+        borderRadius="6px"
+        fontSize="xs"
+        fontWeight="500"
+        bg={accentColor}
+        color="white"
+        cursor="pointer"
+        transition="all 0.1s"
+        _hover={{ bg: accentHoverColor }}
+        onClick={onSave}
+        aria-label="Save Project"
+      >
+        <BiSave size={16} />
+        <Text display={{ base: 'none', md: 'inline' }}>Save</Text>
+      </Box>
+    );
+  }
 
   return (
     <Box ref={ref} position="relative" display="inline-flex">
@@ -125,9 +166,12 @@ export const SplitButton = ({
           py={1}
           role="menu"
         >
-          {menuItems.map((item, i) => (
+          {menuItems.map((item, i) => {
+            const isExportAsItem = item.label === 'Export As…';
+            const showDivider = showExportAsItem && isExportAsItem && i > 0;
+            return (
             <Box key={item.label}>
-              {i === 4 && (
+              {showDivider && (
                 <Box h="1px" bg="#e2e8f0" mx={2} my={1} />
               )}
               <Flex
@@ -150,7 +194,8 @@ export const SplitButton = ({
                 {item.label}
               </Flex>
             </Box>
-          ))}
+            );
+          })}
         </Box>
       )}
     </Box>

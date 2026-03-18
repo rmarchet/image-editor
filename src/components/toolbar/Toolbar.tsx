@@ -32,14 +32,11 @@ import type { TextConfig } from '../../engine/elements/TextElement';
 import type { DrawingElement } from '../../engine/elements/DrawingElement';
 import { UpdateDrawingStrokesCommand, UpdateTextConfigCommand, RemoveElementCommand, BatchCommand, TransformCommand, FlipCommand, UpdateShapeConfigCommand, DuplicateCommand } from '../../engine/history/commands';
 import type { DrawingStrokeData } from '../../types';
-import { exportCanvas } from '../../utils/export';
-import { exportSvg } from '../../utils/exportSvg';
-import { exportPdf } from '../../utils/exportPdf';
-import { saveProjectToFile } from '../../utils/projectFile';
+import { dispatchSave, dispatchSaveProject } from '../../embed/saveDispatcher';
 import { SplitButton } from './SplitButton';
 import { SaveExportDialog } from './SaveExportDialog';
 import type { ToolType } from '../../types';
-import { isToolEnabled } from '../../embed/config';
+import { isToolEnabled, isSaveAllowed } from '../../embed/config';
 
 const tools: { id: ToolType; icon: ReactNode; label: string }[] = [
   { id: 'select', icon: <BiPointer size={16} />, label: 'Select' },
@@ -311,7 +308,7 @@ export const Toolbar = () => {
   };
 
   const handleSaveProject = async () => {
-    await saveProjectToFile();
+    await dispatchSaveProject('project');
   };
 
   const handleUpdateDrawingColor = (color: string) => {
@@ -598,14 +595,18 @@ export const Toolbar = () => {
       <Box flex="1" />
 
       {/* Save */}
-      <SplitButton
-        onSave={handleSaveProject}
-        onExportPng={() => exportCanvas('png', 1)}
-        onExportJpeg={() => exportCanvas('jpeg', 0.9)}
-        onExportSvg={() => exportSvg()}
-        onExportPdf={() => exportPdf()}
-      />
-      <SaveExportDialog />
+      {isSaveAllowed() && (
+        <>
+          <SplitButton
+            onSave={handleSaveProject}
+            onExportPng={() => dispatchSave('png', 'artboard')}
+            onExportJpeg={() => dispatchSave('jpeg', 'artboard')}
+            onExportSvg={() => dispatchSave('svg', 'artboard')}
+            onExportPdf={() => dispatchSave('pdf', 'artboard')}
+          />
+          <SaveExportDialog />
+        </>
+      )}
     </Flex>
   );
 };

@@ -7,6 +7,13 @@ export type {
   ImageEditorFontsConfig,
   ImageEditorThemeConfig,
   NormalizedImageEditorConfig,
+  ExportFormat,
+  ExportPayload,
+  ProjectPayload,
+  EditorErrorEvent,
+  OnSaveCallback,
+  OnSaveProjectCallback,
+  OnErrorCallback,
 } from './embed/config';
 export type { ProjectFileV1 } from './types';
 
