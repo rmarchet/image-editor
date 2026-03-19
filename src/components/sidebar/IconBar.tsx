@@ -11,8 +11,10 @@ import {
 } from 'react-icons/bi';
 import { useEditorStore } from '../../stores/editorStore';
 import type { SidebarPanel } from '../../types';
+import { Tooltip } from '../Tooltip';
 import {
   isPanelEnabled,
+  isSidebarLabelEnabled,
   getTheme,
 } from '../../embed/config';
 
@@ -38,11 +40,12 @@ export const IconBar = () => {
   const setActivePanel = useEditorStore((s) => s.setActivePanel);
   const theme = getTheme();
   const visiblePanels = panels.filter((panel) => isPanelEnabled(panel.id));
+  const showLabels = isSidebarLabelEnabled();
 
   return (
     <Flex
       direction="column"
-      w="66px"
+      w="56px"
       bg={theme.sidebarBackground}
       borderRight="1px solid"
       borderColor="#313244"
@@ -87,10 +90,16 @@ export const IconBar = () => {
           onClick={() => setActivePanel(panel.id)}
           className='icon-button'
         >
-          {panel.icon}
-          <Text fontSize="12px" mt="2px" lineHeight="1" letterSpacing="-0.75px">
-            {panel.label}
-          </Text>
+          <Tooltip openDelay={0} disabled={showLabels} content={panel.label} positioning={{ placement: "right" }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              {panel.icon}
+              {showLabels && (
+                <Text fontSize="11px" mt="2px" lineHeight="1" letterSpacing="-0.7px">
+                  {panel.label}
+                </Text>
+              )}
+            </div>
+          </Tooltip>
         </Box>
       ))}
     </Flex>

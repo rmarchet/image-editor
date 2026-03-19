@@ -19,6 +19,9 @@ import {
   BiAlignLeft,
   BiAlignMiddle,
   BiAlignRight,
+  BiSolidColorFill,
+  BiPencil,
+  BiText,
 } from 'react-icons/bi';
 import { useToolStore } from '../../stores/toolStore';
 import { useHistoryStore } from '../../stores/historyStore';
@@ -43,8 +46,8 @@ const tools: { id: ToolType; icon: ReactNode; label: string }[] = [
   { id: 'crop', icon: <BiCrop size={16} />, label: 'Crop' },
 ];
 
-const LinkIcon = ({ linked }: { linked: boolean }) => (
-  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+const LinkIcon = ({ linked, size = 16 }: { linked: boolean; size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
     <path
       d="M6 5.5H5a3 3 0 1 0 0 6h1M10 5.5h1a3 3 0 1 1 0 6h-1M5.5 8h5"
       stroke="currentColor"
@@ -446,11 +449,13 @@ export const Toolbar = () => {
               <Divider />
               <Flex alignItems="center" gap={2} ml={1}>
                 <ColorInput
+                  customIcon={<BiSolidColorFill size={16} />}
                   label="Fill"
                   value={selectedShapeConfig.fillColor}
                   onChange={(v) => handleUpdateShapeConfig({ fillColor: v })}
                 />
                 <ColorInput
+                  customIcon={<BiPencil size={16} />}
                   label="Border"
                   value={selectedShapeConfig.strokeColor}
                   onChange={(v) => handleUpdateShapeConfig({ strokeColor: v })}
@@ -471,7 +476,9 @@ export const Toolbar = () => {
               <Flex alignItems="center" gap={1} ml={1}>
                 <TinyToggleButton
                   label="B"
+                  tooltip='Bold'
                   active={selectedTextConfig.fontWeight === 'bold'}
+                  style={{ fontSize: '15px' }}
                   onClick={() =>
                     handleUpdateTextConfig({
                       fontWeight:
@@ -483,8 +490,9 @@ export const Toolbar = () => {
                 />
                 <TinyToggleButton
                   label="I"
+                  tooltip='Italic'
                   active={selectedTextConfig.fontStyle === 'italic'}
-                  style={{ fontStyle: 'italic', fontFamily: 'serif', fontWeight: 100 }}
+                  style={{ fontSize: '15px', fontStyle: 'italic', fontFamily: 'serif', fontWeight: 100 }}
                   onClick={() =>
                     handleUpdateTextConfig({
                       fontStyle:
@@ -496,7 +504,8 @@ export const Toolbar = () => {
                 />
                 <TinyToggleButton
                   label="S"
-                  style={{ textDecoration: 'line-through' }}
+                  tooltip='Strike-through'
+                  style={{ fontSize: '15px', textDecoration: 'line-through' }}
                   active={selectedTextConfig.strikethrough}
                   onClick={() =>
                     handleUpdateTextConfig({
@@ -505,6 +514,7 @@ export const Toolbar = () => {
                   }
                 />
                 <ColorInput
+                  customIcon={<BiText size={16} />}
                   label="Text"
                   value={selectedTextConfig.fill}
                   onChange={(v) => handleUpdateTextConfig({ fill: v })}
@@ -521,17 +531,21 @@ export const Toolbar = () => {
                 />
                 <Flex alignItems="center" gap={1}>
                   <TinyToggleButton
-                    label={<BiAlignLeft size={12} />}
+                    tooltip='Align left'
+                    label={<BiAlignLeft size={16} />}
                     active={selectedTextConfig.align === 'left'}
                     onClick={() => handleUpdateTextConfig({ align: 'left' })}
                   />
                   <TinyToggleButton
-                    label={<BiAlignMiddle size={12} />}
+                    tooltip='Align center'
+
+                    label={<BiAlignMiddle size={16} />}
                     active={selectedTextConfig.align === 'center'}
                     onClick={() => handleUpdateTextConfig({ align: 'center' })}
                   />
                   <TinyToggleButton
-                    label={<BiAlignRight size={12} />}
+                    tooltip='Align right'
+                    label={<BiAlignRight size={16} />}
                     active={selectedTextConfig.align === 'right'}
                     onClick={() => handleUpdateTextConfig({ align: 'right' })}
                   />
@@ -545,6 +559,7 @@ export const Toolbar = () => {
               <Divider />
               <Flex alignItems="center" gap={2} ml={1}>
                 <ColorInput
+                  customIcon={<BiPencil size={16} />}
                   label="Line"
                   value={selectedDrawingColor}
                   onChange={handleUpdateDrawingColor}
@@ -568,15 +583,14 @@ export const Toolbar = () => {
             <PropInput label="W" value={Math.round(selectedElement.width)} onChange={(v) => {
               handleDimensionChange('width', v);
             }} onFocus={captureTransformSnapshot} onBlur={commitTransformSnapshot} />
-            <Tooltip content={lockAspectRatio ? 'Unlock aspect ratio' : 'Lock aspect ratio'}>
-              <Flex alignItems="center" gap={1}>
-                <TinyToggleButton
-                  label={<LinkIcon linked={lockAspectRatio} />}
-                  active={lockAspectRatio}
-                  onClick={() => setLockAspectRatio((current) => !current)}
-                />
-              </Flex>
-            </Tooltip>
+            <Flex alignItems="center" gap={1}>
+              <TinyToggleButton
+                tooltip={lockAspectRatio ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
+                label={<LinkIcon linked={lockAspectRatio} size={16} />}
+                active={lockAspectRatio}
+                onClick={() => setLockAspectRatio((current) => !current)}
+              />
+            </Flex>
             <PropInput label="H" value={Math.round(selectedElement.height)} onChange={(v) => {
               handleDimensionChange('height', v);
             }} onFocus={captureTransformSnapshot} onBlur={commitTransformSnapshot} />

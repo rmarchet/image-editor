@@ -110,11 +110,8 @@ export type SaveFormat = 'png' | 'jpeg' | 'svg' | 'pdf' | 'ieproj';
 export const ALL_SAVE_FORMATS: SaveFormat[] = ['png', 'jpeg', 'svg', 'pdf', 'ieproj'];
 
 export interface ImageEditorExportConfig {
-  /** Allowed export formats. Defaults to all formats. */
   allowFormats?: SaveFormat[];
-  /** Show the "Export As..." modal. Defaults to true. */
   allowExportAs?: boolean;
-  /** Show the Save/Export button in toolbar. Defaults to true. */
   allowSave?: boolean;
 }
 
@@ -124,6 +121,7 @@ export interface ImageEditorConfig {
   colorPalette?: ImageEditorColorPaletteConfig;
   enabledTools?: ToolType[];
   enabledShapes?: ShapeType[];
+  showToolbarLabels?: boolean;
   canvas?: ImageEditorCanvasConfig;
   export?: ImageEditorExportConfig;
   initialProject?: ProjectFileV1 | string;
@@ -187,6 +185,7 @@ const DEFAULT_CONFIG: NormalizedImageEditorConfig = {
   },
   enabledTools: [...ALL_EDITOR_TOOLS],
   enabledShapes: [...ALL_EDITOR_SHAPES],
+  showToolbarLabels: true,
   canvas: {
     width: 1200,
     height: 800,
@@ -348,6 +347,7 @@ export function normalizeImageEditorConfig(
     },
     enabledTools: normalizeTools(config?.enabledTools),
     enabledShapes: normalizeShapes(config?.enabledShapes),
+    showToolbarLabels: config?.showToolbarLabels ?? DEFAULT_CONFIG.showToolbarLabels,
     canvas: {
       width: config?.canvas?.width ?? DEFAULT_CONFIG.canvas.width,
       height: config?.canvas?.height ?? DEFAULT_CONFIG.canvas.height,
@@ -388,6 +388,10 @@ export function isToolEnabled(tool: ToolType) {
 
 export function isShapeEnabled(shape: ShapeType) {
   return currentConfig.enabledShapes.includes(shape);
+}
+
+export function isSidebarLabelEnabled() {
+  return currentConfig.showToolbarLabels;
 }
 
 export function isPanelEnabled(panel: Exclude<SidebarPanel, null>) {

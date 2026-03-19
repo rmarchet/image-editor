@@ -91,7 +91,7 @@ It should be useful to crop images. Since to a lack of PixiJS capabilities, it's
 Allow transparent background for the canvas and add the possibility to choose from a library of image background to be applied to the canvas without inferfering with the editing experience.
 
 ### 21. Guides and alignment [TO-DO]
-Enhance the editing experience adding advanced visual elements such as rulers to the artboard, guides to visually fix positions, sticky edges and alignment helpers.
+Enhance the editing experience adding advanced visual elements such as rulers to the artboard, guides to visually fix positions, sticky edges and alignment helpers. Also, when multiple elements are selected in the artboard, provide tools in the topbar to align their top / bottom / left / right edges.
 
 ### 22. Copy/paste [TO-DO]
 Allows to copy and paste images and text elements to the artboard. Vector elements can only be copied internally but are not pasteable elsewhere.

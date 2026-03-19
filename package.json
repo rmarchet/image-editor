@@ -1,6 +1,6 @@
 {
   "name": "image-editor",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": false,
   "type": "module",
   "author": "Roberto Marchetti",
@@ -20,6 +20,7 @@
   ],
   "scripts": {
     "dev": "vite",
+    "start": "vite",
     "prebuild": "rm -rf dist",
     "build": "tsc -b && vite build",
     "build:release": "VITE_MINIFY=terser VITE_SOURCEMAP=false VITE_DROP_CONSOLE=true yarn build",
