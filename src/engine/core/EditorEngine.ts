@@ -20,6 +20,7 @@ export class EditorEngine {
   private canvasBg!: Graphics;
   private elementsLayer!: Container;
   private overlayLayer!: Container;
+  private canvasDecorationZoom = 1;
   private elements: BaseElement[] = [];
   private hostElement: HTMLElement | null = null;
   private _initialized = false;
@@ -102,32 +103,52 @@ export class EditorEngine {
     this._initialized = true;
   }
 
-  private drawCanvasBackground() {
+  private drawCanvasBackground(targetZoom = this.viewport?.zoom ?? 1) {
     const { canvasWidth, canvasHeight, backgroundColor } = useEditorStore.getState();
+    const zoom = Math.max(targetZoom, 0.0001);
+
     this.canvasShadow.clear();
     this.canvasBg.clear();
 
-    const shadowSpread = 6;
-    const shadowOffsetY = 10;
+    const shadowSpread = 3 / zoom;
+    const shadowOffsetY = 7 / zoom;
+    const shadowRadius = 3 / zoom;
     this.canvasShadow.roundRect(
       -shadowSpread,
       shadowOffsetY - shadowSpread,
       canvasWidth + shadowSpread * 2,
       canvasHeight + shadowSpread * 2,
-      4
+      shadowRadius
     );
     this.canvasShadow.fill({ color: 0x000000, alpha: 0.1 });
 
     this.canvasBg.roundRect(0, 0, canvasWidth, canvasHeight, 0);
     this.canvasBg.fill(backgroundColor);
 
-    this.canvasBg.rect(-2, -2, canvasWidth + 4, canvasHeight + 4);
-    this.canvasBg.stroke({ width: 1, color: 0xbbbbbb });
+    const borderWidth = 1 / zoom;
+    const borderInset = borderWidth / 2;
+    this.canvasBg.rect(
+      -borderInset,
+      -borderInset,
+      canvasWidth + borderWidth,
+      canvasHeight + borderWidth
+    );
+    this.canvasBg.stroke({ width: borderWidth, color: 0xbbbbbb });
+
+    this.canvasDecorationZoom = zoom;
+  }
+
+  redrawCanvasDecorations(targetZoom = this.viewport?.zoom ?? 1) {
+    this.drawCanvasBackground(targetZoom);
   }
 
   private setupRenderLoop() {
     this.app.ticker.add(() => {
-      this.selection.drawOverlay(this.viewport.zoom);
+      const zoom = this.viewport.zoom;
+      if (Math.abs(zoom - this.canvasDecorationZoom) > 0.0001) {
+        this.drawCanvasBackground(zoom);
+      }
+      this.selection.drawOverlay(zoom);
     });
   }
 

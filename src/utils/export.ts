@@ -29,6 +29,7 @@ export function captureArtboardCanvas(): HTMLCanvasElement | null {
   let canvas: HTMLCanvasElement | null = null;
 
   try {
+    engine.redrawCanvasDecorations(1);
     stage.scale.set(1);
     stage.position.set(0, 0);
 
@@ -42,6 +43,7 @@ export function captureArtboardCanvas(): HTMLCanvasElement | null {
   } finally {
     stage.scale.set(prevScale.x, prevScale.y);
     stage.position.set(prevPos.x, prevPos.y);
+    engine.redrawCanvasDecorations(engine.viewport.zoom);
     exportTexture.destroy();
   }
 
