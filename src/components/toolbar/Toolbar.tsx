@@ -40,7 +40,7 @@ import { dispatchSave, dispatchSaveProject } from '../../embed/saveDispatcher';
 import { SplitButton } from './SplitButton';
 import { SaveExportDialog } from './SaveExportDialog';
 import type { ToolType } from '../../types';
-import { isToolEnabled, isSaveAllowed, getSystemFonts } from '../../embed/config';
+import { isToolEnabled, isSaveAllowed, getSystemFonts, getWebFonts } from '../../embed/config';
 
 const tools: { id: ToolType; icon: ReactNode; label: string }[] = [
   { id: 'select', icon: <BiPointer size={16} />, label: 'Select' },
@@ -114,15 +114,35 @@ export const Toolbar = () => {
   const selectedShapeConfig = selectedShape?.config;
   const selectedTextConfig = selectedText?.config;
   const selectedDrawingColor = selectedDrawing?.strokes[0]?.color ?? '#000000';
+  const availableWebFonts = getWebFonts();
   const availableSystemFonts = getSystemFonts();
+  const baseTextFontOptions = [
+    ...availableWebFonts.map((font) => ({
+      value: font.fontFamily,
+      label: font.name,
+      previewFontFamily: font.fontFamily,
+    })),
+    ...availableSystemFonts.map((fontFamily) => ({
+      value: fontFamily,
+      label: fontFamily,
+      previewFontFamily: fontFamily,
+    })),
+  ].filter(
+    (option, index, allOptions) =>
+      index === allOptions.findIndex((candidate) => candidate.value === option.value)
+  );
+
   const textFontOptions = selectedTextConfig
-    ? (availableSystemFonts.includes(selectedTextConfig.fontFamily)
-      ? availableSystemFonts
-      : [selectedTextConfig.fontFamily, ...availableSystemFonts]).map((fontFamily) => ({
-        value: fontFamily,
-        label: fontFamily,
-        previewFontFamily: fontFamily,
-      }))
+    ? (baseTextFontOptions.some((option) => option.value === selectedTextConfig.fontFamily)
+      ? baseTextFontOptions
+      : [
+        {
+          value: selectedTextConfig.fontFamily,
+          label: selectedTextConfig.fontFamily,
+          previewFontFamily: selectedTextConfig.fontFamily,
+        },
+        ...baseTextFontOptions,
+      ])
     : [];
 
   const getElementTopLeft = (element: BaseElement) => {

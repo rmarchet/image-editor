@@ -65,6 +65,9 @@ export const ErrorCodes = {
 
   // Config
   CONFIG_INVALID: 'CONFIG_INVALID',
+
+  // Fonts
+  WEB_FONT_LOAD_FAILED: 'WEB_FONT_LOAD_FAILED',
 } as const;
 
 export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];

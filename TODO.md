@@ -82,8 +82,9 @@ Enable host configuration and in-editor selection of system fonts for text eleme
 - Changing the family updates the element immediately and is tracked by undo/redo via the existing `UpdateTextConfigCommand`.
 - Backward-compatible: projects saved with any `fontFamily` string continue to load correctly even if that font is not in the current list.
 
-#### 15.2 Web fonts [TO-DO]
+#### 15.2 Web fonts [WIP]
 Support loading remote typefaces (Google Fonts or arbitrary CDN) via URL entries in the host config.
+- Add `fonts.webFonts` as an array of objects with shape: `{ fontFamily, name, url }`.
 - Font families declared with a URL are registered via the Font Loading API before first use.
 - SVG export optionally embeds `@font-face` declarations for self-contained files.
 

@@ -3,13 +3,20 @@ import { createRoot, type Root } from 'react-dom/client';
 import createCache from '@emotion/cache';
 import { EditorRoot } from '../app/EditorRoot';
 import type { ImageEditorConfig, NormalizedImageEditorConfig } from './config';
-import { resetImageEditorConfig, setImageEditorConfig, getImageEditorConfig } from './config';
+import {
+  resetImageEditorConfig,
+  setImageEditorConfig,
+  getImageEditorConfig,
+  getWebFonts,
+} from './config';
 import { clearEditorDomEnvironment, focusEditorMountRoot, queryEditorElement, setEditorDomEnvironment } from './domEnvironment';
 import { resetEditorRuntimeState } from '../stores/resetStores';
 import { EditorEngine } from '../engine/core/EditorEngine';
 import { serializeProject, deserializeProject, loadImageToEditor } from '../utils/projectFile';
-import { reportError } from './errorReporter';
+import { ErrorCodes, reportError, reportWarning } from './errorReporter';
 import type { ProjectFileV1 } from '../types';
+import { TextElement } from '../engine/elements/TextElement';
+import { loadWebFonts } from './webFontLoader';
 
 export interface ImageEditorHandle {
   destroy: () => void;
@@ -102,6 +109,27 @@ async function applyInitialContent(): Promise<void> {
   }
 }
 
+function refreshTextElements() {
+  const engine = EditorEngine.getInstance();
+  if (!engine.initialized) {
+    return;
+  }
+
+  const textElements = engine
+    .getElements()
+    .filter((element): element is TextElement => element instanceof TextElement);
+
+  if (textElements.length === 0) {
+    return;
+  }
+
+  for (const element of textElements) {
+    element.updateConfig(element.config);
+  }
+
+  engine.syncElementsToStore();
+}
+
 export function mount(
   hostElement: HTMLElement,
   config?: ImageEditorConfig
@@ -137,6 +165,28 @@ export function mount(
     hostElement,
     shadowRoot,
   };
+
+  void (async () => {
+    const result = await loadWebFonts(hostElement.ownerDocument, getWebFonts());
+
+    if (!mountedEditor || mountedEditor.hostElement !== hostElement) {
+      return;
+    }
+
+    if (result.failed.length > 0) {
+      reportWarning(
+        ErrorCodes.WEB_FONT_LOAD_FAILED,
+        'One or more configured web fonts failed to load.',
+        {
+          failedFonts: result.failed,
+        }
+      );
+    }
+
+    if (result.loaded.length > 0) {
+      refreshTextElements();
+    }
+  })();
 
   applyInitialContent();
 

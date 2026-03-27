@@ -132,6 +132,7 @@ Config surface:
 - `fonts`
   - `defaultFamily`
   - `systemFonts`
+  - `webFonts`
 - `theme`
   - `accent`
   - `accentHover`

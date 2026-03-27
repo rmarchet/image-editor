@@ -99,9 +99,16 @@ export const SYSTEM_FONTS: readonly string[] = [
   'Verdana',
 ] as const;
 
+export interface ImageEditorWebFontConfig {
+  fontFamily: string;
+  name: string;
+  url: string;
+}
+
 export interface ImageEditorFontsConfig {
   defaultFamily?: string;
   systemFonts?: string[];
+  webFonts?: ImageEditorWebFontConfig[];
 }
 
 export interface ImageEditorThemeConfig {
@@ -155,6 +162,7 @@ export interface NormalizedImageEditorConfig {
   fonts: {
     defaultFamily: string;
     systemFonts: string[];
+    webFonts: ImageEditorWebFontConfig[];
   };
   theme: {
     accent: string;
@@ -190,6 +198,7 @@ const DEFAULT_CONFIG: NormalizedImageEditorConfig = {
   fonts: {
     defaultFamily: 'Arial',
     systemFonts: [...SYSTEM_FONTS],
+    webFonts: [],
   },
   theme: {
     accent: '#7c3aed',
@@ -239,19 +248,63 @@ function uniqueItems<T>(values: T[]) {
   return Array.from(new Set(values));
 }
 
+function normalizeWebFonts(webFonts?: ImageEditorWebFontConfig[]) {
+  if (!webFonts || webFonts.length === 0) {
+    return [];
+  }
+
+  const seenFamilies = new Set<string>();
+  const normalized: ImageEditorWebFontConfig[] = [];
+
+  for (const entry of webFonts) {
+    const fontFamily =
+      typeof entry?.fontFamily === 'string' ? entry.fontFamily.trim() : '';
+    const name = typeof entry?.name === 'string' ? entry.name.trim() : '';
+    const url = typeof entry?.url === 'string' ? entry.url.trim() : '';
+
+    if (!fontFamily || !name || !url) {
+      continue;
+    }
+
+    if (seenFamilies.has(fontFamily)) {
+      continue;
+    }
+
+    seenFamilies.add(fontFamily);
+    normalized.push({ fontFamily, name, url });
+  }
+
+  return normalized;
+}
+
 function normalizeFonts(config?: ImageEditorFontsConfig) {
-  // Host system fonts come first (visible at top of picker), then fill with
-  // the built-in preset. Deduplication keeps the list clean.
+  const webFonts = normalizeWebFonts(config?.webFonts);
+  const webFontFamilies = webFonts.map((font) => font.fontFamily);
+
   const hostSystemFonts = (config?.systemFonts ?? []).map((f) => f.trim()).filter(Boolean);
-  const systemFonts = uniqueItems([...hostSystemFonts, ...SYSTEM_FONTS]);
+  const hasConfiguredSystemFonts = hostSystemFonts.length > 0;
+  const rawSystemFonts = hasConfiguredSystemFonts
+    ? hostSystemFonts
+    : config?.systemFonts === undefined
+      ? [...SYSTEM_FONTS]
+      : [];
+
+  const systemFonts = uniqueItems(rawSystemFonts).filter(
+    (fontFamily) => !webFontFamilies.includes(fontFamily)
+  );
+
+  const allAvailableFamilies = uniqueItems([...webFontFamilies, ...systemFonts]);
+  const requestedDefaultFamily = config?.defaultFamily?.trim();
+
   const defaultFamily =
-    config?.defaultFamily?.trim() || systemFonts[0] || DEFAULT_CONFIG.fonts.defaultFamily;
+    requestedDefaultFamily && allAvailableFamilies.includes(requestedDefaultFamily)
+      ? requestedDefaultFamily
+      : allAvailableFamilies[0] || DEFAULT_CONFIG.fonts.defaultFamily;
 
   return {
     defaultFamily,
-    systemFonts: systemFonts.includes(defaultFamily)
-      ? systemFonts
-      : [defaultFamily, ...systemFonts],
+    systemFonts,
+    webFonts,
   };
 }
 
@@ -441,7 +494,11 @@ export function getDefaultFontFamily() {
 }
 
 export function getSystemFonts(): string[] {
-  return currentConfig.fonts.systemFonts;
+  return [...currentConfig.fonts.systemFonts];
+}
+
+export function getWebFonts(): ImageEditorWebFontConfig[] {
+  return currentConfig.fonts.webFonts.map((font) => ({ ...font }));
 }
 
 export function getBackgroundSwatches() {

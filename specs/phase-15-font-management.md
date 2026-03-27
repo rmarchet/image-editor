@@ -43,18 +43,18 @@ host application to extend that list with additional names.
 - If a loaded project's `fontFamily` value is not in the current list, it is shown as an
   extra first option so the existing text renders correctly without silent fallback.
 
-### Phase 15.2 — Web Fonts *(planned)*
+### Phase 15.2 — Web Fonts *(in progress)*
 
 **Goal:** support loading remote typefaces before use, so custom branded fonts render
 consistently and export faithfully.
 
-**Planned outcomes:**
-- Extend `ImageEditorFontsConfig` with an optional `urls` or `sources` array per family.
-- `FontLoader` utility that calls `document.fonts.load()` via the CSS Font Loading API.
-- Fonts are loaded asynchronously at mount time; a loading state prevents text elements
-  from rendering until required fonts are ready.
-- SVG export embeds `@font-face` for families that have a registered URL, producing
-  self-contained files.
+**Implemented / in-progress outcomes:**
+- Extend `ImageEditorFontsConfig` with `webFonts?: Array<{ fontFamily, name, url }>`.
+- `webFontLoader.ts` utility loads configured web fonts via the CSS Font Loading API.
+- Fonts are loaded asynchronously at mount time; when one or more fonts are loaded,
+  existing text elements are refreshed so glyph rendering switches from fallback to target font.
+- Toolbar font picker combines `webFonts` and `systemFonts` with preview rendering.
+- SVG `@font-face` embedding is still deferred to a follow-up change.
 
 ### Phase 15.3 — Line-height Control *(planned)*
 
@@ -102,9 +102,10 @@ Synchronous getter: config is set once at mount, so no memoization needed in con
 
 ---
 
-## 2. Toolbar UI (Phase 15.1 changes)
+## 2. Toolbar UI (Phase 15.1+15.2 changes)
 
-A native `<select>` element added at the start of the text-controls `<Flex>` (before Bold).
+A reusable custom `Select` component is used at the start of the text-controls `<Flex>`
+(before Bold), so font preview is reliable across browsers.
 
 **Behaviour:**
 - Shows the element's current `fontFamily` as the selected value.
@@ -112,9 +113,10 @@ A native `<select>` element added at the start of the text-controls `<Flex>` (be
   extra option so the value remains visible and selectable.
 - On change, calls `handleUpdateTextConfig({ fontFamily })`, which pushes an
   `UpdateTextConfigCommand` — giving undo/redo for free.
+- For web fonts, the picker label uses `name` while the applied style uses `fontFamily`.
 
-**No new component:** the `<select>` is an inline native element styled to match the
-existing toolbar (`height: 28px`, `border-radius: 6px`, `font-size: 12px`).
+`Select` options support `previewFontFamily`, allowing each option row to render with
+its own font preview.
 
 ---
 
@@ -122,8 +124,11 @@ existing toolbar (`height: 28px`, `border-radius: 6px`, `font-size: 12px`).
 
 | File | Change |
 |------|--------|
-| `src/embed/config.ts` | Add `SYSTEM_FONTS`; add `showToolbarLabels` to `NormalizedImageEditorConfig`; update `normalizeFonts`; add `getSystemFonts()` |
-| `src/components/toolbar/Toolbar.tsx` | Import `getSystemFonts`; add font-family `<select>` in text controls |
+| `src/embed/config.ts` | Add `SYSTEM_FONTS`; add `showToolbarLabels` to `NormalizedImageEditorConfig`; update `normalizeFonts`; add `getSystemFonts()` and `getWebFonts()` |
+| `src/components/common/Select.tsx` | Reusable custom select with option-level preview support |
+| `src/components/toolbar/Toolbar.tsx` | Combine web/system fonts into one picker with previews |
+| `src/embed/webFontLoader.ts` | Load configured `webFonts` via Font Loading API |
+| `src/embed/mountImageEditor.tsx` | Trigger web font loading and refresh text elements on successful load |
 | `TODO.md` | Split phase 15 into 15.1 / 15.2 / 15.3 subtasks |
 
 **No new files** for 15.1. No changes to history commands, project serialization,
@@ -137,6 +142,8 @@ or export utilities (font-family was already persisted and emitted).
 - [ ] Mount without `fonts` config — font picker lists all 13 `SYSTEM_FONTS`.
 - [ ] Mount with `fonts.systemFonts: ['Brand Font']` — picker shows `Brand Font` first,
       then the 13 system fonts.
+- [ ] Mount with `fonts.webFonts: [{ fontFamily, name, url }]` — picker shows `name`
+  and renders preview using `fontFamily`.
 - [ ] Mount with `fonts.defaultFamily: 'Georgia'` — newly created text uses Georgia;
       Georgia is present in the picker.
 - [ ] Mount with duplicate/invalid entries in `fonts.systemFonts` — deduplication
@@ -165,7 +172,7 @@ or export utilities (font-family was already persisted and emitted).
 - **Font availability is not validated.** If a system font name typed by the host is not
   installed on the end-user's machine or browser, Pixi will fall back to the browser
   default (usually a generic sans-serif) silently.
-- **No font preview in the dropdown.** Option element styling is browser-restricted;
-  font previews are planned for a future UI polish pass or a custom dropdown component.
+- **Web font URLs require CORS compatibility.** If the remote font server blocks cross-origin
+  requests, loading fails and the editor reports `WEB_FONT_LOAD_FAILED`.
 - **SVG text portability.** SVG files embed the family name string only. Viewers on
   systems without the font will substitute. Embedded `@font-face` will be addressed in 15.2.

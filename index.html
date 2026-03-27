@@ -26,6 +26,17 @@
       }
 
       ImageEditor.mount(rootElement, {
+        fonts: {
+          defaultFamily: 'Arial',
+          // systemFonts: ['Arial', 'Georgia'],
+          webFonts: [
+            {
+              fontFamily: 'UnifrakturMaguntia, cursive',
+              name: 'UnifrakturMaguntia',
+              url: 'https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap',
+            },
+          ],
+        },
         enabledShapes: [], // ['rectangle', 'ellipse', 'line', 'arrow'],
         colorPalette: {
           backgroundSwatches: [], // ['#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff'],

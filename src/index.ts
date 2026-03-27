@@ -5,6 +5,7 @@ export type {
   ImageEditorColorPaletteConfig,
   ImageEditorConfig,
   ImageEditorFontsConfig,
+  ImageEditorWebFontConfig,
   ImageEditorThemeConfig,
   NormalizedImageEditorConfig,
   ExportFormat,
