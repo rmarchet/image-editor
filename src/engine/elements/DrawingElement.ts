@@ -77,6 +77,26 @@ export class DrawingElement extends BaseElement {
     this._height = next;
   }
 
+  get rotation(): number {
+    return super.rotation;
+  }
+  set rotation(degrees: number) {
+    const centerBefore = this.getCenterInParentSpace();
+    super.rotation = degrees;
+
+    if (!centerBefore) {
+      return;
+    }
+
+    const centerAfter = this.getCenterInParentSpace();
+    if (!centerAfter) {
+      return;
+    }
+
+    this.container.x += centerBefore.x - centerAfter.x;
+    this.container.y += centerBefore.y - centerAfter.y;
+  }
+
   get strokes(): DrawingStrokeData[] {
     return cloneStrokes(this._strokes);
   }
@@ -92,6 +112,25 @@ export class DrawingElement extends BaseElement {
       points: stroke.points.map((point) => ({ ...point })),
     });
     this.redraw();
+  }
+
+  private getCenterInParentSpace(): { x: number; y: number } | null {
+    const localBounds = this.container.getLocalBounds();
+    if (localBounds.width <= 0 || localBounds.height <= 0) {
+      return null;
+    }
+
+    const localCenter = {
+      x: localBounds.x + localBounds.width / 2,
+      y: localBounds.y + localBounds.height / 2,
+    };
+    const globalCenter = this.container.toGlobal(localCenter);
+
+    if (this.container.parent) {
+      return this.container.parent.toLocal(globalCenter);
+    }
+
+    return { x: globalCenter.x, y: globalCenter.y };
   }
 
   clone(): DrawingElement {

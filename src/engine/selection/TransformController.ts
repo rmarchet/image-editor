@@ -2,7 +2,14 @@ import { BaseElement } from '../elements/BaseElement';
 import type { SelectionManager } from './SelectionManager';
 import type { Viewport } from '../core/Viewport';
 
-type TransformMode = 'move' | 'resize-nw' | 'resize-ne' | 'resize-se' | 'resize-sw' | 'rotate' | null;
+type ResizeMode = 'resize-nw' | 'resize-ne' | 'resize-se' | 'resize-sw';
+type TransformMode = 'move' | ResizeMode | 'rotate' | null;
+type CornerName = 'nw' | 'ne' | 'se' | 'sw';
+
+interface WorldPoint {
+  x: number;
+  y: number;
+}
 
 interface TransformSnapshot {
   x: number;
@@ -12,11 +19,10 @@ interface TransformSnapshot {
   rotation: number;
 }
 
-interface TransformBounds {
-  left: number;
-  top: number;
-  right: number;
-  bottom: number;
+interface ResizeFrame {
+  corners: Record<CornerName, WorldPoint>;
+  axisX: WorldPoint;
+  axisY: WorldPoint;
 }
 
 interface ResizeDimensions {
@@ -30,7 +36,8 @@ export class TransformController {
   private mode: TransformMode = null;
   private startPointer = { x: 0, y: 0 };
   private startState: TransformSnapshot | null = null;
-  private startBounds: TransformBounds | null = null;
+  private startResizeFrame: ResizeFrame | null = null;
+  private rotateCenterWorld: { x: number; y: number } | null = null;
   private targetElement: BaseElement | null = null;
 
   onTransformStart?: (element: BaseElement, snapshot: TransformSnapshot) => void;
@@ -53,20 +60,11 @@ export class TransformController {
       this.startPointer = { x: worldX, y: worldY };
       this.startState = this.captureState(this.targetElement);
       if (handle === 'rotate') {
-        this.startBounds = null;
+        this.startResizeFrame = null;
+        this.rotateCenterWorld = this.getElementCenterWorld(this.targetElement);
       } else {
-        const bounds = this.targetElement.container.getBounds(false);
-        const topLeft = this.viewport.screenToWorld(bounds.x, bounds.y);
-        const bottomRight = this.viewport.screenToWorld(
-          bounds.x + bounds.width,
-          bounds.y + bounds.height
-        );
-        this.startBounds = {
-          left: topLeft.x,
-          top: topLeft.y,
-          right: bottomRight.x,
-          bottom: bottomRight.y,
-        };
+        this.rotateCenterWorld = null;
+        this.startResizeFrame = this.captureResizeFrame(this.targetElement);
       }
       this.onTransformStart?.(this.targetElement, this.startState);
       return true;
@@ -79,7 +77,8 @@ export class TransformController {
       this.mode = 'move';
       this.startPointer = { x: worldX, y: worldY };
       this.startState = this.captureState(hit);
-      this.startBounds = null;
+      this.startResizeFrame = null;
+      this.rotateCenterWorld = null;
       this.onTransformStart?.(hit, this.startState);
       return true;
     }
@@ -104,88 +103,21 @@ export class TransformController {
       case 'resize-nw':
       case 'resize-ne':
       case 'resize-sw': {
-        if (!this.startBounds) {
-          break;
-        }
-
-        const minSize = 20;
-        const mode = this.mode;
-        const startLeft = this.startBounds.left;
-        const startTop = this.startBounds.top;
-        const startRight = this.startBounds.right;
-        const startBottom = this.startBounds.bottom;
-
-        let newLeft = startLeft;
-        let newTop = startTop;
-        let newRight = startRight;
-        let newBottom = startBottom;
-
-        if (mode === 'resize-se') {
-          newRight = Math.max(startLeft + minSize, startRight + dx);
-          newBottom = Math.max(startTop + minSize, startBottom + dy);
-        } else if (mode === 'resize-nw') {
-          newLeft = Math.min(startRight - minSize, startLeft + dx);
-          newTop = Math.min(startBottom - minSize, startTop + dy);
-        } else if (mode === 'resize-ne') {
-          newRight = Math.max(startLeft + minSize, startRight + dx);
-          newTop = Math.min(startBottom - minSize, startTop + dy);
-        } else if (mode === 'resize-sw') {
-          newLeft = Math.min(startRight - minSize, startLeft + dx);
-          newBottom = Math.max(startTop + minSize, startBottom + dy);
-        }
-
-        let newW = Math.max(minSize, newRight - newLeft);
-        let newH = Math.max(minSize, newBottom - newTop);
-
-        if (keepAspectRatio) {
-          const constrained = this.constrainResizeToAspectRatio(newW, newH, minSize);
-          newW = constrained.width;
-          newH = constrained.height;
-
-          if (mode === 'resize-se') {
-            newRight = newLeft + newW;
-            newBottom = newTop + newH;
-          } else if (mode === 'resize-nw') {
-            newLeft = newRight - newW;
-            newTop = newBottom - newH;
-          } else if (mode === 'resize-ne') {
-            newRight = newLeft + newW;
-            newTop = newBottom - newH;
-          } else if (mode === 'resize-sw') {
-            newLeft = newRight - newW;
-            newBottom = newTop + newH;
-          }
-        }
-
-        this.targetElement.width = newW;
-        this.targetElement.height = newH;
-
-        const nextPivotX = this.targetElement.container.pivot.x;
-        const nextPivotY = this.targetElement.container.pivot.y;
-
-        this.targetElement.x = newLeft + nextPivotX;
-        this.targetElement.y = newTop + nextPivotY;
-
-        // Final correction aligns the rendered top-left bound exactly to the intended anchor.
-        const actualBounds = this.targetElement.container.getBounds(false);
-        const actualTopLeft = this.viewport.screenToWorld(actualBounds.x, actualBounds.y);
-        this.targetElement.x += newLeft - actualTopLeft.x;
-        this.targetElement.y += newTop - actualTopLeft.y;
+        this.applyResizeFromOrientedFrame(this.mode, worldX, worldY, keepAspectRatio);
         break;
       }
 
       case 'rotate': {
-        const localBounds = this.targetElement.container.getLocalBounds();
-        const localCenter = {
-          x: localBounds.x + localBounds.width / 2,
-          y: localBounds.y + localBounds.height / 2,
-        };
-        const centerScreen = this.targetElement.container.toGlobal(localCenter);
-        const centerWorld = this.viewport.screenToWorld(centerScreen.x, centerScreen.y);
+        if (!this.rotateCenterWorld) {
+          break;
+        }
+
         const angle =
-          Math.atan2(worldY - centerWorld.y, worldX - centerWorld.x) * (180 / Math.PI) +
+          Math.atan2(worldY - this.rotateCenterWorld.y, worldX - this.rotateCenterWorld.x) *
+            (180 / Math.PI) +
           90;
         this.targetElement.rotation = angle;
+        this.alignElementCenterToWorld(this.targetElement, this.rotateCenterWorld);
         break;
       }
     }
@@ -201,7 +133,8 @@ export class TransformController {
     this.mode = null;
     this.targetElement = null;
     this.startState = null;
-    this.startBounds = null;
+    this.startResizeFrame = null;
+    this.rotateCenterWorld = null;
   }
 
   get isTransforming() {
@@ -216,6 +149,145 @@ export class TransformController {
       height: el.height,
       rotation: el.rotation,
     };
+  }
+
+  private getElementCenterWorld(el: BaseElement): { x: number; y: number } | null {
+    const localBounds = el.container.getLocalBounds();
+    if (localBounds.width <= 0 || localBounds.height <= 0) {
+      return null;
+    }
+
+    const localCenter = {
+      x: localBounds.x + localBounds.width / 2,
+      y: localBounds.y + localBounds.height / 2,
+    };
+    const centerScreen = el.container.toGlobal(localCenter);
+    return this.viewport.screenToWorld(centerScreen.x, centerScreen.y);
+  }
+
+  private alignElementCenterToWorld(el: BaseElement, targetCenter: { x: number; y: number }) {
+    const currentCenter = this.getElementCenterWorld(el);
+    if (!currentCenter) {
+      return;
+    }
+
+    el.x += targetCenter.x - currentCenter.x;
+    el.y += targetCenter.y - currentCenter.y;
+  }
+
+  private captureResizeFrame(el: BaseElement): ResizeFrame | null {
+    const corners = this.getElementCornersWorld(el);
+    if (!corners) {
+      return null;
+    }
+
+    const topEdgeX = corners.ne.x - corners.nw.x;
+    const topEdgeY = corners.ne.y - corners.nw.y;
+    const leftEdgeX = corners.sw.x - corners.nw.x;
+    const leftEdgeY = corners.sw.y - corners.nw.y;
+
+    const topEdgeLength = Math.hypot(topEdgeX, topEdgeY);
+    const leftEdgeLength = Math.hypot(leftEdgeX, leftEdgeY);
+    if (topEdgeLength <= 0 || leftEdgeLength <= 0) {
+      return null;
+    }
+
+    return {
+      corners,
+      axisX: {
+        x: topEdgeX / topEdgeLength,
+        y: topEdgeY / topEdgeLength,
+      },
+      axisY: {
+        x: leftEdgeX / leftEdgeLength,
+        y: leftEdgeY / leftEdgeLength,
+      },
+    };
+  }
+
+  private getElementCornersWorld(el: BaseElement): Record<CornerName, WorldPoint> | null {
+    const localBounds = el.container.getLocalBounds();
+    if (localBounds.width <= 0 || localBounds.height <= 0) {
+      return null;
+    }
+
+    const nwScreen = el.container.toGlobal({ x: localBounds.x, y: localBounds.y });
+    const neScreen = el.container.toGlobal({ x: localBounds.x + localBounds.width, y: localBounds.y });
+    const seScreen = el.container.toGlobal({
+      x: localBounds.x + localBounds.width,
+      y: localBounds.y + localBounds.height,
+    });
+    const swScreen = el.container.toGlobal({ x: localBounds.x, y: localBounds.y + localBounds.height });
+
+    return {
+      nw: this.viewport.screenToWorld(nwScreen.x, nwScreen.y),
+      ne: this.viewport.screenToWorld(neScreen.x, neScreen.y),
+      se: this.viewport.screenToWorld(seScreen.x, seScreen.y),
+      sw: this.viewport.screenToWorld(swScreen.x, swScreen.y),
+    };
+  }
+
+  private getResizeAnchorConfig(mode: ResizeMode): {
+    anchor: CornerName;
+    signX: number;
+    signY: number;
+  } {
+    switch (mode) {
+      case 'resize-se':
+        return { anchor: 'nw', signX: 1, signY: 1 };
+      case 'resize-nw':
+        return { anchor: 'se', signX: -1, signY: -1 };
+      case 'resize-ne':
+        return { anchor: 'sw', signX: 1, signY: -1 };
+      case 'resize-sw':
+        return { anchor: 'ne', signX: -1, signY: 1 };
+    }
+  }
+
+  private applyResizeFromOrientedFrame(
+    mode: ResizeMode,
+    worldX: number,
+    worldY: number,
+    keepAspectRatio: boolean,
+  ) {
+    if (!this.startResizeFrame || !this.targetElement) {
+      return;
+    }
+
+    const minSize = 20;
+    const frame = this.startResizeFrame;
+    const config = this.getResizeAnchorConfig(mode);
+    const anchor = frame.corners[config.anchor];
+
+    const deltaX = worldX - anchor.x;
+    const deltaY = worldY - anchor.y;
+
+    let newW = Math.max(
+      minSize,
+      config.signX * (deltaX * frame.axisX.x + deltaY * frame.axisX.y),
+    );
+    let newH = Math.max(
+      minSize,
+      config.signY * (deltaX * frame.axisY.x + deltaY * frame.axisY.y),
+    );
+
+    if (keepAspectRatio) {
+      const constrained = this.constrainResizeToAspectRatio(newW, newH, minSize);
+      newW = constrained.width;
+      newH = constrained.height;
+    }
+
+    this.targetElement.width = newW;
+    this.targetElement.height = newH;
+
+    const updatedCorners = this.getElementCornersWorld(this.targetElement);
+    if (!updatedCorners) {
+      return;
+    }
+
+    const updatedAnchor = updatedCorners[config.anchor];
+    this.targetElement.x += anchor.x - updatedAnchor.x;
+    this.targetElement.y += anchor.y - updatedAnchor.y;
   }
 
   private constrainResizeToAspectRatio(
