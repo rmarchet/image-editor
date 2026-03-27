@@ -30,6 +30,27 @@ export function createEditorSystem(imageEditorConfig?: Partial<NormalizedImageEd
       [`${CSS_VAR_ROOT}, ${CSS_VAR_ROOT} *`]: {
         boxSizing: 'border-box',
       },
+      [`${CSS_VAR_ROOT} textarea[data-text-edit-overlay="true"]::selection`]: {
+        background: 'rgba(124, 58, 237, 0.35)',
+        color: '#111827',
+      },
+      [`${CSS_VAR_ROOT} textarea[data-text-edit-overlay="true"]::-moz-selection`]: {
+        background: 'rgba(124, 58, 237, 0.35)',
+        color: '#111827',
+      },
+      [`${CSS_VAR_ROOT} [role="menu"]::-webkit-scrollbar`]: {
+        width: '8px',
+      },
+      [`${CSS_VAR_ROOT} [role="menu"]::-webkit-scrollbar-track`]: {
+        background: 'transparent',
+      },
+      [`${CSS_VAR_ROOT} [role="menu"]::-webkit-scrollbar-thumb`]: {
+        background: '#d1d5db',
+        borderRadius: '4px',
+      },
+      [`${CSS_VAR_ROOT} [role="menu"]::-webkit-scrollbar-thumb:hover`]: {
+        background: '#9ca3af',
+      },
     },
     theme: {
       tokens: {

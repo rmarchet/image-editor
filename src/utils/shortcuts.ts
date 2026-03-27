@@ -136,7 +136,11 @@ export function setupKeyboardShortcuts(): () => void {
     }
 
     const target = e.target as HTMLElement | null;
-    if (isEditableTarget(target)) {
+    const activeElement = getActiveEditorElement() as HTMLElement | null;
+    // In Shadow DOM, keyboard events listened on window can be retargeted to
+    // the host element. Check both event target and active element to avoid
+    // triggering canvas shortcuts while typing/editing text.
+    if (isEditableTarget(target) || isEditableTarget(activeElement)) {
       return;
     }
 

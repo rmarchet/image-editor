@@ -67,17 +67,22 @@ export const Select = ({
       </Menu.Trigger>
 
       <Portal container={environment?.portalRef}>
-        <Menu.Positioner>
+        <Menu.Positioner 
+          bg="white"
+          border="1px solid #e2e8f0"
+          borderRadius="8px"
+          padding={1}
+          minW={`calc(${width} + 2rem)`}
+          boxShadow="0 8px 24px rgba(0, 0, 0, 0.12)"
+        >
           <Menu.Content
-            minW={width}
-            maxH="260px"
             overflowY="auto"
             p={1}
-            bg="white"
-            border="1px solid #e2e8f0"
-            borderRadius="8px"
-            boxShadow="0 8px 24px rgba(0, 0, 0, 0.12)"
+            maxH="260px"
+            minW={width}
             zIndex={1000}
+            bg="transparent"
+            boxShadow="none"
           >
             {options.map((option) => (
               <Menu.Item
