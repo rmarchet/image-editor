@@ -81,7 +81,7 @@ export const DEFAULT_DRAW_SWATCHES = [
 
 /**
  * Web-safe / widely available system font names used as the built-in baseline.
- * Host config can prepend additional families via `fonts.families`.
+ * Host config can prepend additional names via `fonts.systemFonts`.
  */
 export const SYSTEM_FONTS: readonly string[] = [
   'Arial',
@@ -101,7 +101,7 @@ export const SYSTEM_FONTS: readonly string[] = [
 
 export interface ImageEditorFontsConfig {
   defaultFamily?: string;
-  families?: string[];
+  systemFonts?: string[];
 }
 
 export interface ImageEditorThemeConfig {
@@ -154,7 +154,7 @@ export interface ImageEditorConfig {
 export interface NormalizedImageEditorConfig {
   fonts: {
     defaultFamily: string;
-    families: string[];
+    systemFonts: string[];
   };
   theme: {
     accent: string;
@@ -189,7 +189,7 @@ export interface NormalizedImageEditorConfig {
 const DEFAULT_CONFIG: NormalizedImageEditorConfig = {
   fonts: {
     defaultFamily: 'Arial',
-    families: ['Arial'],
+    systemFonts: [...SYSTEM_FONTS],
   },
   theme: {
     accent: '#7c3aed',
@@ -240,16 +240,18 @@ function uniqueItems<T>(values: T[]) {
 }
 
 function normalizeFonts(config?: ImageEditorFontsConfig) {
-  // Host families come first (visible at top of picker), then fill with the
-  // system-font preset. Deduplication keeps the list clean.
-  const hostFamilies = (config?.families ?? []).map((f) => f.trim()).filter(Boolean);
-  const families = uniqueItems([...hostFamilies, ...SYSTEM_FONTS]);
+  // Host system fonts come first (visible at top of picker), then fill with
+  // the built-in preset. Deduplication keeps the list clean.
+  const hostSystemFonts = (config?.systemFonts ?? []).map((f) => f.trim()).filter(Boolean);
+  const systemFonts = uniqueItems([...hostSystemFonts, ...SYSTEM_FONTS]);
   const defaultFamily =
-    config?.defaultFamily?.trim() || families[0] || DEFAULT_CONFIG.fonts.defaultFamily;
+    config?.defaultFamily?.trim() || systemFonts[0] || DEFAULT_CONFIG.fonts.defaultFamily;
 
   return {
     defaultFamily,
-    families: families.includes(defaultFamily) ? families : [defaultFamily, ...families],
+    systemFonts: systemFonts.includes(defaultFamily)
+      ? systemFonts
+      : [defaultFamily, ...systemFonts],
   };
 }
 
@@ -438,8 +440,8 @@ export function getDefaultFontFamily() {
   return currentConfig.fonts.defaultFamily;
 }
 
-export function getFontFamilies(): string[] {
-  return currentConfig.fonts.families;
+export function getSystemFonts(): string[] {
+  return currentConfig.fonts.systemFonts;
 }
 
 export function getBackgroundSwatches() {

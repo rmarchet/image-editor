@@ -13,8 +13,8 @@ first, with web-font loading and line-height controls layered on top in subseque
 ### Covered by Phase 15.1 (this iteration)
 
 - Built-in catalog of cross-platform web-safe system fonts.
-- Host configuration that prepends custom font-family names via `fonts.families`.
-- Merged, deduplicated font list available at runtime through `getFontFamilies()`.
+- Host configuration that prepends custom font-family names via `fonts.systemFonts`.
+- Merged, deduplicated font list available at runtime through `getSystemFonts()`.
 - Font-family picker in the toolbar, visible only when a single text element is selected.
 - Undo/redo support via the existing `UpdateTextConfigCommand`.
 - Backward compatibility: existing project files with any `fontFamily` string continue to load.
@@ -36,9 +36,9 @@ host application to extend that list with additional names.
 
 **Key outcomes:**
 - `SYSTEM_FONTS` constant exported from `config.ts` as the built-in baseline.
-- `normalizeFonts()` merges host `families` (if provided) at the front of the list, then
+- `normalizeFonts()` merges host `systemFonts` (if provided) at the front of the list, then
   appends `SYSTEM_FONTS`, deduplicating the result.
-- `getFontFamilies()` exposes the resulting list to UI consumers.
+- `getSystemFonts()` exposes the resulting list to UI consumers.
 - Font-family `<select>` dropdown in the toolbar text-controls section.
 - If a loaded project's `fontFamily` value is not in the current list, it is shown as an
   extra first option so the existing text renders correctly without silent fallback.
@@ -86,15 +86,15 @@ Trebuchet MS, Verdana
 | Input | Output |
 |-------|--------|
 | No config | `SYSTEM_FONTS`, `defaultFamily = 'Arial'` |
-| `families: ['Helvetica Neue']` | `['Helvetica Neue', ...SYSTEM_FONTS]`, deduplicated |
+| `systemFonts: ['Helvetica Neue']` | `['Helvetica Neue', ...SYSTEM_FONTS]`, deduplicated |
 | `defaultFamily: 'Georgia'` | Georgia placed at front if not already present |
-| Both fields | Host families first, then SYSTEM_FONTS, defaultFamily guaranteed present |
+| Both fields | Host systemFonts first, then SYSTEM_FONTS, defaultFamily guaranteed present |
 
-### `getFontFamilies()` getter
+### `getSystemFonts()` getter
 
 ```ts
-export function getFontFamilies(): string[] {
-  return currentConfig.fonts.families;
+export function getSystemFonts(): string[] {
+  return currentConfig.fonts.systemFonts;
 }
 ```
 
@@ -108,7 +108,7 @@ A native `<select>` element added at the start of the text-controls `<Flex>` (be
 
 **Behaviour:**
 - Shows the element's current `fontFamily` as the selected value.
-- If the stored font is not in `getFontFamilies()` (legacy project), it is prepended as an
+- If the stored font is not in `getSystemFonts()` (legacy project), it is prepended as an
   extra option so the value remains visible and selectable.
 - On change, calls `handleUpdateTextConfig({ fontFamily })`, which pushes an
   `UpdateTextConfigCommand` — giving undo/redo for free.
@@ -122,8 +122,8 @@ existing toolbar (`height: 28px`, `border-radius: 6px`, `font-size: 12px`).
 
 | File | Change |
 |------|--------|
-| `src/embed/config.ts` | Add `SYSTEM_FONTS`; add `showToolbarLabels` to `NormalizedImageEditorConfig`; update `normalizeFonts`; add `getFontFamilies()` |
-| `src/components/toolbar/Toolbar.tsx` | Import `getFontFamilies`; add font-family `<select>` in text controls |
+| `src/embed/config.ts` | Add `SYSTEM_FONTS`; add `showToolbarLabels` to `NormalizedImageEditorConfig`; update `normalizeFonts`; add `getSystemFonts()` |
+| `src/components/toolbar/Toolbar.tsx` | Import `getSystemFonts`; add font-family `<select>` in text controls |
 | `TODO.md` | Split phase 15 into 15.1 / 15.2 / 15.3 subtasks |
 
 **No new files** for 15.1. No changes to history commands, project serialization,
@@ -135,11 +135,11 @@ or export utilities (font-family was already persisted and emitted).
 
 ### Config behaviour
 - [ ] Mount without `fonts` config — font picker lists all 13 `SYSTEM_FONTS`.
-- [ ] Mount with `fonts.families: ['Brand Font']` — picker shows `Brand Font` first,
+- [ ] Mount with `fonts.systemFonts: ['Brand Font']` — picker shows `Brand Font` first,
       then the 13 system fonts.
 - [ ] Mount with `fonts.defaultFamily: 'Georgia'` — newly created text uses Georgia;
       Georgia is present in the picker.
-- [ ] Mount with duplicate/invalid entries in `fonts.families` — deduplication
+- [ ] Mount with duplicate/invalid entries in `fonts.systemFonts` — deduplication
       removes repeats, invalid entries are stripped.
 
 ### UI behaviour

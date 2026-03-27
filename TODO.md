@@ -77,8 +77,8 @@ Must extend the Text editing experience with the choice of custom web fonts (con
 #### 15.1 System fonts [WIP]
 Enable host configuration and in-editor selection of system fonts for text elements.
 - Built-in baseline of cross-platform web-safe font names.
-- Host may prepend custom families via `fonts.families` in mount config; the two lists are merged and deduplicated.
-- Font picker dropdown in the toolbar, visible whenever a single text element is selected.
+- Host may prepend custom families via `fonts.systemFonts` in mount config; the two lists are merged and deduplicated.
+- Font picker dropdown in the toolbar, visible whenever a single text element is selected and with font preview (use Select.tsx custom component).
 - Changing the family updates the element immediately and is tracked by undo/redo via the existing `UpdateTextConfigCommand`.
 - Backward-compatible: projects saved with any `fontFamily` string continue to load correctly even if that font is not in the current list.
 
