@@ -71,8 +71,25 @@ Allow to specify the starting content of a working session. It can either be the
 Configurable collabacs to allow the hosting application to receive the bitmap or the vector result of an export action or the JSON of the project so it's saved out of the application. Also implement the onError callback to notify possible errors/warnings to the hosting application.
 Also add a config options to allow Save and enable/disable different file formats.
 
-### 15. Fonts management [TO-DO]
-Must extend the Text editing experience with the choice of custom web fonts (configurable) and the line-heigh tool.
+### 15. Fonts management [WIP]
+Must extend the Text editing experience with the choice of custom web fonts (configurable) and the line-height tool.
+
+#### 15.1 System fonts [WIP]
+Enable host configuration and in-editor selection of system fonts for text elements.
+- Built-in baseline of cross-platform web-safe font names.
+- Host may prepend custom families via `fonts.families` in mount config; the two lists are merged and deduplicated.
+- Font picker dropdown in the toolbar, visible whenever a single text element is selected.
+- Changing the family updates the element immediately and is tracked by undo/redo via the existing `UpdateTextConfigCommand`.
+- Backward-compatible: projects saved with any `fontFamily` string continue to load correctly even if that font is not in the current list.
+
+#### 15.2 Web fonts [TO-DO]
+Support loading remote typefaces (Google Fonts or arbitrary CDN) via URL entries in the host config.
+- Font families declared with a URL are registered via the Font Loading API before first use.
+- SVG export optionally embeds `@font-face` declarations for self-contained files.
+
+#### 15.3 Line-height control [TO-DO]
+Add a line-height tool in the text controls row of the toolbar.
+Expose the value in `TextConfig` and persist it in the project file.
 
 ### 16. Better layers management [TO-DO]
 Make the Layers in the panel sortable with drag and drop. Also allow rename of the layers. Consider adding groups of layers for better management.
@@ -83,9 +100,10 @@ Simpler action to start and stop drawing on the artboard (without the need of cl
 ### 18. Colors management [TO-DO]
 Change the color picker component library and add the Alpha slider and Transparent color everywhere.
 
-### 19. Crop tool [TO-DO]
+### 19. Crop tool and hand tool [TO-DO]
 Currently the crop tool is visible in the top Toolbar but it's not working.
 It should be useful to crop images. Since to a lack of PixiJS capabilities, it's possible that not all the shapes can be cropped.
+The hand tool would be useful when the artboard is zoomed in and it's needed to move the view area.
 
 ### 20. Backgrounds [TO-DO]
 Allow transparent background for the canvas and add the possibility to choose from a library of image background to be applied to the canvas without inferfering with the editing experience.

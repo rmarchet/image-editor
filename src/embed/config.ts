@@ -79,6 +79,26 @@ export const DEFAULT_DRAW_SWATCHES = [
   '#ec4899',
 ];
 
+/**
+ * Web-safe / widely available system font names used as the built-in baseline.
+ * Host config can prepend additional families via `fonts.families`.
+ */
+export const SYSTEM_FONTS: readonly string[] = [
+  'Arial',
+  'Arial Black',
+  'Comic Sans MS',
+  'Courier New',
+  'Georgia',
+  'Helvetica',
+  'Impact',
+  'Lucida Console',
+  'Palatino Linotype',
+  'Tahoma',
+  'Times New Roman',
+  'Trebuchet MS',
+  'Verdana',
+] as const;
+
 export interface ImageEditorFontsConfig {
   defaultFamily?: string;
   families?: string[];
@@ -151,6 +171,7 @@ export interface NormalizedImageEditorConfig {
   };
   enabledTools: ToolType[];
   enabledShapes: ShapeType[];
+  showToolbarLabels: boolean;
   canvas: {
     width: number;
     height: number;
@@ -219,10 +240,12 @@ function uniqueItems<T>(values: T[]) {
 }
 
 function normalizeFonts(config?: ImageEditorFontsConfig) {
-  const families = uniqueItems(
-    (config?.families ?? []).map((family) => family.trim()).filter(Boolean)
-  );
-  const defaultFamily = config?.defaultFamily?.trim() || families[0] || DEFAULT_CONFIG.fonts.defaultFamily;
+  // Host families come first (visible at top of picker), then fill with the
+  // system-font preset. Deduplication keeps the list clean.
+  const hostFamilies = (config?.families ?? []).map((f) => f.trim()).filter(Boolean);
+  const families = uniqueItems([...hostFamilies, ...SYSTEM_FONTS]);
+  const defaultFamily =
+    config?.defaultFamily?.trim() || families[0] || DEFAULT_CONFIG.fonts.defaultFamily;
 
   return {
     defaultFamily,
@@ -413,6 +436,10 @@ export function getDefaultShapeType(): ShapeType {
 
 export function getDefaultFontFamily() {
   return currentConfig.fonts.defaultFamily;
+}
+
+export function getFontFamilies(): string[] {
+  return currentConfig.fonts.families;
 }
 
 export function getBackgroundSwatches() {

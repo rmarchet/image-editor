@@ -39,7 +39,7 @@ import { dispatchSave, dispatchSaveProject } from '../../embed/saveDispatcher';
 import { SplitButton } from './SplitButton';
 import { SaveExportDialog } from './SaveExportDialog';
 import type { ToolType } from '../../types';
-import { isToolEnabled, isSaveAllowed } from '../../embed/config';
+import { isToolEnabled, isSaveAllowed, getFontFamilies } from '../../embed/config';
 
 const tools: { id: ToolType; icon: ReactNode; label: string }[] = [
   { id: 'select', icon: <BiPointer size={16} />, label: 'Select' },
@@ -474,6 +474,35 @@ export const Toolbar = () => {
             <>
               <Divider />
               <Flex alignItems="center" gap={1} ml={1}>
+                <select
+                  value={selectedTextConfig.fontFamily}
+                  onChange={(e) => handleUpdateTextConfig({ fontFamily: e.target.value })}
+                  title="Font family"
+                  style={{
+                    height: '28px',
+                    padding: '0 4px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: '#374151',
+                    background: 'white',
+                    cursor: 'pointer',
+                    width: '130px',
+                    outline: 'none',
+                    flexShrink: 0,
+                  }}
+                >
+                  {!getFontFamilies().includes(selectedTextConfig.fontFamily) && (
+                    <option value={selectedTextConfig.fontFamily}>
+                      {selectedTextConfig.fontFamily}
+                    </option>
+                  )}
+                  {getFontFamilies().map((family) => (
+                    <option key={family} value={family}>
+                      {family}
+                    </option>
+                  ))}
+                </select>
                 <TinyToggleButton
                   label="B"
                   tooltip='Bold'
