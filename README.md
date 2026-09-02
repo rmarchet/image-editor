@@ -1,113 +1,113 @@
 # Image Editor
 
-A simple, web-based image editor built with React, TypeScript, and Fabric.js. Edit images directly in your browser with a clean, intuitive interface.
+Web image editor built with React + TypeScript + PixiJS v8.
 
-## Features
+The project started as a full rewrite from a Fabric.js/Rollup architecture to a Vite/Pixi/Zustand stack with a design-tool style UI.
 
-- 🖼️ **Image Upload**: Drag and drop or click to upload images
-- ✂️ **Crop Tool**: Crop images to your desired dimensions
-- 🔄 **Resize Tool**: Adjust image dimensions
-- 🔃 **Rotate Tool**: Rotate images to any angle
-- 🪞 **Mirror Tool**: Flip images horizontally or vertically
-- 🎨 **Paint Tool**: Draw and paint on images
-- 📝 **Text Tool**: Add text overlays to images
-- 🎭 **Effects**: Apply various image effects (grayscale, sepia, invert, etc.)
-- ↩️ **Undo/Redo**: Full history management for all edits
-- 💾 **Save**: Download edited images as PNG files
-- 📱 **Responsive Design**: Works on desktop and mobile devices
+## Highlights
+
+- PixiJS rendering engine with zoom/pan viewport
+- Sidebar-driven editor shell (upload, text, shapes, draw, layers, background, filters, settings)
+- Tool system (`select`, `crop`, `draw`, `text`, `shape`)
+- Command-based undo/redo
+- Layer management (select, reorder, visibility, lock, delete)
+- Image/text/shape/drawing elements
+- Inline text editing overlay
+- Filter presets and filter persistence metadata
+- Project save/load as `.ieproj`
+- Export to image (`png`/`jpeg`)
 
 ## Tech Stack
 
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Fabric.js** - Canvas manipulation
-- **Styled Components** - Component styling
-- **Rollup** - Module bundler
-- **React Icons** - Icon library
+- React 19
+- TypeScript 5
+- PixiJS 8
+- Chakra UI 3 + Emotion
+- Zustand 5
+- Vite 7
+
+## Project Specs
+
+Implementation notes are documented in `specs/`:
+
+- `specs/phase-1-foundation.md`
+- `specs/phase-2-engine.md`
+- `specs/phase-3-ui.md`
+- `specs/phase-4-tools.md`
+- `specs/phase-5-advanced.md`
+- `specs/phase-6-polish.md`
+- `specs/phase-7-project-files-and-assets.md`
+- `specs/phase-8-editing-extensions.md`
+- `specs/phase-9-zoom-controls-and-centered-viewport.md`
+- `specs/phase-10-toolbar-filters-and-transform-consistency.md`
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (v20 or higher)
+- Node.js 20+
 - npm or yarn
 
-### Installation
+### Install
 
-1. Clone the repository:
 ```bash
 git clone https://github.com/rmarchet/image-editor.git
 cd image-editor
-```
-
-2. Install dependencies:
-```bash
-npm install
-# or
 yarn install
 ```
 
-3. Start the development server:
+### Run Dev Server
+
 ```bash
-npm run dev
-# or
 yarn dev
 ```
 
-The application will open in your browser at `http://localhost:8888`
+Default URL: `http://localhost:5173`
 
-### Build for Production
+## Scripts
+
+- `yarn dev` - start Vite dev server
+- `yarn build` - type-check + production build
+- `yarn preview` - preview production build
+- `yarn type-check` - run TypeScript checks
+
+## Deploy in a Subfolder
+
+- Build now uses a relative base path by default (`./`), so compiled assets are resolved relative to the deployed `index.html`.
+- If you need an explicit base path, set `VITE_BASE_PATH` at build time.
 
 ```bash
-npm run build
-# or
-yarn build
+VITE_BASE_PATH=/my/subfolder/ yarn build
 ```
 
-The production build will be in the `dist/` directory.
+## Architecture Overview
 
-## Available Scripts
-
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm run clean` - Clean the dist directory
-- `npm run start` - Clean and start development server
-- `npm run type-check` - Run TypeScript type checking
- 
-
-## Usage
-
-1. **Upload an Image**: Click the "Upload New" button or drag and drop an image onto the canvas
-2. **Select a Tool**: Click on any tool in the toolbar (Resize, Crop, Rotate, Mirror, Paint, Text, Effects)
-3. **Edit Your Image**: Use the tool controls to make your edits
-4. **Undo/Redo**: Use the undo/redo buttons to navigate through your edit history
-5. **Save**: Click the "Save" button to download your edited image
-6. **Reset**: Click "Cancel" to reset and start over
-
-## Features in Detail
-
-### History Management
-The editor maintains a complete history of all changes, allowing you to undo and redo any action. The history is managed automatically and persists across tool changes.
-
-### Local Storage
-Your work is automatically saved to browser local storage, so you can continue editing even after refreshing the page.
-
-### Canvas Manipulation
-All image editing is performed using Fabric.js, providing smooth interactions and high-quality rendering.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+```
+src/
+	app/
+	components/
+		canvas/
+		common/
+		sidebar/
+			panels/
+		toolbar/
+	engine/
+		core/
+		elements/
+		filters/
+		history/
+		selection/
+		tools/
+	stores/
+	types/
+	utils/
+```
 
 ## License
 
-This project is private and not licensed for public use.
+MIT
 
 ## Author
 
 Roberto Marchetti
-
----
-
-Built with ❤️ using React and Fabric.js
 

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <title>Image Editor</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body, #root { width: 100%; height: 100%; overflow: hidden; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="editor"></div>
+    <script type="module">
+      import ImageEditor from './src/index.ts';
+
+      const rootElement = document.getElementById('editor');
+      if (!rootElement) {
+        throw new Error('Root element not found');
+      }
+
+      ImageEditor.mount(rootElement, {
+        fonts: {
+          defaultFamily: 'Arial',
+          // systemFonts: ['Arial', 'Georgia'],
+          webFonts: [
+            {
+              fontFamily: 'UnifrakturMaguntia, cursive',
+              name: 'UnifrakturMaguntia',
+              url: 'https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap',
+            },
+          ],
+        },
+        enabledShapes: [], // ['rectangle', 'ellipse', 'line', 'arrow'],
+        colorPalette: {
+          backgroundSwatches: [], // ['#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff'],
+          drawSwatches: [], // ['#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff'],
+        },
+        // showToolbarLabels: false,
+        theme: {
+          // accent: '#dd00cc',
+          // accentLight: '#ffaaee',
+          // accentDark: '#aa0099',
+          // accentHover: '#ee33bb',
+          // sidebarBackground: '#1e1e2e',
+        },
+        canvas: {
+          // width: 800,
+          // height: 600,
+          // backgroundColor: '#ffffff',
+        },
+        export: {
+          allowSave: true,
+          // allowFormats: ['png', 'ieproj'],
+          // allowExportAs: false,
+        },
+        onError: (error) => {
+          console.error('---ImageEditor error:', error);
+        },
+        // onSave: (payload) => {
+        //   console.log('---Save payload:', payload);
+        // },
+        // onSaveProject: (payload) => {
+        //   console.log('---Save project payload:', payload);
+        // },
+      });
+    </script>
+  </body>
+</html>
